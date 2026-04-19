@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora Didática</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg-page: #0d0d0f;
+    --bg-calc: #16161a;
+    --bg-display: #09090b;
+    --text-main: #ededed;
+    --text-muted: #a1a1aa;
+    --accent-color: #6366f1; /* Indigo premium */
+    --accent-hover: #4f46e5;
+    --btn-bg: #27272a;
+    --btn-hover: #3f3f46;
+    --btn-op: #1e1e24;
+    --btn-op-text: #6366f1;
+    --error-color: #ef4444;
+    --success-color: #10b981;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-page);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 30px 10px;
+    box-sizing: border-box;
+  }
+
+  .calculadora {
+    background: var(--bg-calc);
+    border-radius: 24px;
+    padding: 24px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  
+  /* --- Controles Superiores --- */
+  .topo-controles {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    gap: 10px;
+  }
+  .btn-topo {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 8px 0;
+    border-radius: 10px;
+    background: var(--btn-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.2s;
+  }
+  .btn-topo:hover {
+    background: var(--btn-hover);
+    color: var(--text-main);
+  }
+  
+  /* --- Display --- */
+  .display {
+    background: var(--bg-display);
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    text-align: right;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.02);
+  }
+  .display-expr {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    min-height: 24px;
+    overflow-x: auto;
+    white-space: nowrap;
+    margin-bottom: 8px;
+  }
+  .display-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 3rem;
+    font-weight: 300;
+    letter-spacing: -1px;
+    min-height: 60px;
+    word-wrap: break-word;
+    word-break: break-all;
+    color: #fff;
+  }
+  .display-value.erro { color: var(--error-color); font-size: 2rem;}
+
+  /* --- Botão de Alternância (Antigo MT) --- */
+  .toggle-modo {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--accent-color);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .toggle-modo:hover {
+    background: rgba(99, 102, 241, 0.15);
+  }
+
+  /* --- Grades de Teclado --- */
+  .botoes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  button.tecla {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 500;
+    padding: 18px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    background: var(--btn-bg);
+    color: var(--text-main);
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  button.tecla:active { transform: scale(0.92); }
+  button.tecla:hover { background: var(--btn-hover); }
+  
+  button.tecla.operador { 
+    background: var(--btn-op); 
+    color: var(--btn-op-text); 
+    font-size: 1.4rem; 
+  }
+  button.tecla.operador:hover { background: #2a2a35; }
+  
+  button.tecla.acao { color: var(--error-color); font-weight: 600;}
+  
+  button.tecla.igual { 
+    background: var(--accent-color); 
+    color: white; 
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  }
+  button.tecla.igual:hover { background: var(--accent-hover); }
+
+  #btnZero, #btnZeroCientifico { grid-column: 1 / 3; } /* Zero agora ocupa 2 espaços para simetria */
+
+  /* --- Painéis de Detalhes e Histórico --- */
+  #historico, #detalhes {
+    display: none;
+    background: var(--bg-display);
+    color: var(--text-main);
+    padding: 20px;
+    margin-top: 20px;
+    max-height: 500px;
+    overflow-y: auto;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  
+  #historico div {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+  #historico div:hover { background-color: var(--btn-bg); }
+  #historico div small { display: block; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;}
+
+  /* --- Estilos do Motor Visual HTML (Ajustados para o novo tema) --- */
+  #detalhes .math-step {
+    background-color: var(--bg-calc);
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  #detalhes h3 { 
+    font-size: 1rem; 
+    color: var(--accent-color); 
+    margin-top: 0; 
+    margin-bottom: 12px; 
+    font-weight: 600;
+  }
+  #detalhes pre.info {
+    font-family: 'JetBrains Mono', monospace;
+    background-color: var(--bg-display);
+    padding: 12px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+  }
+  .resultado-final { font-weight: 600; color: var(--success-color) !important; font-size: 1.1rem; text-align: center; border: 1px solid rgba(16, 185, 129, 0.2) !important; background: rgba(16, 185, 129, 0.05) !important;}
+  .erro-didatico { color: var(--error-color) !important; border: 1px solid rgba(239, 68, 68, 0.2) !important; background: rgba(239, 68, 68, 0.05) !important; }
+  
+  .conta-visual {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg-display);
+      padding: 20px;
+      border-radius: 10px;
+      margin: 10px 0;
+      font-size: 1.2rem;
+      overflow-x: auto;
+      white-space: nowrap;
+      display: inline-block;
+      min-width: 90%;
+      border: 1px solid rgba(255,255,255,0.02);
+  }
+  .divisao-grid { display: flex; flex-direction: column; }
+  .div-linha { display: flex; }
+  .div-bloco { padding: 0 5px; text-align: right; letter-spacing: 2px;}
+  .div-chave { border-left: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); padding: 0 8px; margin-left: 5px;}
+  
+  .corte-strike { position: relative; display: inline-block; }
+  .corte-strike::after { content: ''; position: absolute; left: -2px; top: 50%; width: 120%; height: 2px; background: var(--error-color); transform: rotate(-25deg); }
+  .linha-traco { border-bottom: 2px solid var(--text-muted); width: 100%; margin: 8px 0; }
+
+  /* --- Estilo de Frações (Um número em cima do outro) --- */
+  .fracao {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
+    vertical-align: middle;
+    text-align: center;
+  }
+  .fracao > span { padding: 2px 4px; line-height: 1; }
+  .fracao-num { border-bottom: 2px solid currentColor; }
+
+  /* Scrollbar customizada */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-display); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--btn-hover); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* --- RESPONSIVIDADE (Celulares e Telas Menores) --- */
+  @media (max-width: 500px) {
+    body {
+      padding: 15px 10px;
+      align-items: flex-start; /* No celular alinha ao topo para não cortar com o teclado */
+    }
+    .calculadora {
+      padding: 18px;
+      border-radius: 20px;
+    }
+    .display {
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .display-value {
+      font-size: 2.4rem;
+      min-height: 50px;
+    }
+    .botoes {
+      gap: 8px;
+    }
+    button.tecla {
+      padding: 14px 8px;
+      font-size: 1.15rem;
+      border-radius: 10px;
+    }
+    button.tecla.operador {
+      font-size: 1.25rem;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="calculadora">
+  <div class="topo-controles">
+    <button class="btn-topo" id="historicoBtn">📜 Histórico</button>
+    <button class="btn-topo" id="detalhesBtn">📝 Passo a Passo</button>
+  </div>
+  
+  <div class="display">
+    <div class="display-expr" id="displayExpr"></div>
+    <div class="display-value" id="displayValue">0</div>
+  </div>
+
+  <button id="mtBtnGeral" class="toggle-modo" onclick="alternarTeclados()">⚗️ Mudar para Científica</button>
+
+  <div class="botoes" id="tecladoNormal">
+    <button class="tecla acao" aria-label="Limpar tudo" onclick="limparTudo()">C</button>
+    <button class="tecla acao" aria-label="Apagar último caractere" onclick="apagarUltimo()">⌫</button>
+    <button class="tecla operador" onclick="adicionarInput('%')">%</button>
+    <button class="tecla operador" onclick="adicionarInput('÷')">÷</button>
+    
+    <button class="tecla" onclick="adicionarInput('7')">7</button>
+    <button class="tecla" onclick="adicionarInput('8')">8</button>
+    <button class="tecla" onclick="adicionarInput('9')">9</button>
+    <button class="tecla operador" onclick="adicionarInput('×')">×</button>
+    
+    <button class="tecla" onclick="adicionarInput('4')">4</button>
+    <button class="tecla" onclick="adicionarInput('5')">5</button>
+    <button class="tecla" onclick="adicionarInput('6')">6</button>
+    <button class="tecla operador" onclick="adicionarInput('−')">−</button>
+    
+    <button class="tecla" onclick="adicionarInput('1')">1</button>
+    <button class="tecla" onclick="adicionarInput('2')">2</button>
+    <button class="tecla" onclick="adicionarInput('3')">3</button>
+    <button class="tecla operador" onclick="adicionarInput('+')">+</button>
+    
+    <button class="tecla" id="btnZero" onclick="adicionarInput('0')">0</button>
+    <button class="tecla" onclick="adicionarInput('.')">.</button>
+    <button class="tecla igual" id="btnIgual" onclick="calcular()">=</button>
+  </div>
+
+  <div class="botoes" id="tecladoCientifico" style="display:none;">
+    <button class="tecla operador" id="btnSecond" onclick="toggleSecond()">2nd</button>
+    <button class="tecla operador" id="btnDeg" onclick="toggleDeg()">DEG</button>
+    <button class="tecla operador" id="btnSin" onclick="adicionarInput('sin(')">sin</button>
+    <button class="tecla operador" id="btnCos" onclick="adicionarInput('cos(')">cos</button>
+    
+    <button class="tecla operador" id="btnTan" onclick="adicionarInput('tan(')">tan</button>
+    <button class="tecla operador" onclick="adicionarInput('^')">xʸ</button>
+    <button class="tecla operador" id="btnLg" onclick="adicionarInput('lg(')">lg</button>
+    <button class="tecla operador" id="btnLn" onclick="adicionarInput('ln(')">ln</button>
+    
+    <button class="tecla" onclick="adicionarInput('(')">(</button>
+    <button class="tecla" onclick="adicionarInput(')')">)</button>
+    <button class="tecla operador" onclick="adicionarInput('√(')">√</button>
+    <button class="tecla operador" onclick="adicionarInput('!')">x!</button>
+    
+    <button class="tecla operador" onclick="adicionarInput('/')" title="Criar Fração">
+      <div class="fracao" style="font-size: 0.9rem;"><span class="fracao-num">x</span><span>y</span></div>
+    </button>
+    <button class="tecla" onclick="adicionarInput('π')">π</button>
+    <button class="tecla" onclick="adicionarInput('e')">e</button>
+    <button class="tecla" onclick="adicionarInput(',')">,</button> 
+    
+    <button class="tecla" id="btnZeroCientifico" onclick="adicionarInput('0')">0</button>
+    <button class="tecla" onclick="adicionarInput('.')">.</button>
+    <button class="tecla igual" id="btnIgualCientifico" onclick="calcular()">=</button>
+  </div>
+
+  <div id="historico"></div>
+  <div id="detalhes"></div>
+</div>
+
+<script>
+const displayExpr = document.getElementById("displayExpr");
+const displayValue = document.getElementById("displayValue");
+const historicoDiv = document.getElementById("historico");
+const detalhesDiv = document.getElementById("detalhes");
+const tecladoNormal = document.getElementById("tecladoNormal");
+const tecladoCientifico = document.getElementById("tecladoCientifico");
+const mtBtnGeral = document.getElementById("mtBtnGeral");
+
+const btnSecond = document.getElementById("btnSecond");
+const btnDeg = document.getElementById("btnDeg");
+const btnSin = document.getElementById("btnSin");
+const btnCos = document.getElementById("btnCos");
+const btnTan = document.getElementById("btnTan");
+const btnLg = document.getElementById("btnLg");
+const btnLn = document.getElementById("btnLn");
+
+let expressao = "";
+let expressaoParaCalculo = "";
+let ultimosPassos = [];
+let historico = JSON.parse(localStorage.getItem("calcHistorico")) || [];
+let estado = { modeDeg: true, secondState: false };
+
+// =======================================================================
+// === GERADORES DE EXPLICAÇÃO VISUAL DEFINITIVOS (COM HTML INJETADO)  ===
+// =======================================================================
+
+const supMap = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹', '-':'⁻', '.':'·'};
+function toSup(str) { return String(str).split('').map(c => supMap[c] || c).join(''); }
+
+function createCharBlock(baseChar, supChar = ' ', isStrike = false) {
+    let baseStyles = "position:relative; display:inline-block; width:1ch; text-align:center;";
+    let supHtml = '';
+    if (supChar !== ' ') {
+        let supStr = supMap[supChar] || supChar;
+        supHtml = `<span style="position:absolute; bottom:90%; left:0; right:0; margin:auto; text-align:center; color:var(--accent-color); font-weight:600; font-size:0.85em; line-height:1;">${supStr}</span>`;
+    }
+    let baseSpan = isStrike ? `<span class="corte-strike">${baseChar}</span>` : baseChar;
+    return `<span style="${baseStyles}">${supHtml}${baseSpan}</span>`;
+}
+
+function gerarExplicacaoSoma(a, b) {
+    // Se houver números negativos (ex: somar com uma dívida), usamos um fallback seguro
+    if (a < 0 || b < 0) {
+        return {passo: `Calculando ${a} + ${b}`, isHtml: true, visual: `<div class="conta-visual" style="font-size:1.3rem; padding: 20px;">${a} + (${b}) = <span style="color: var(--success-color);">${a+b}</span></div>`};
+    }
+
+    let sA = String(a), sB = String(b);
+    let decA = sA.includes('.') ? sA.split('.')[1].length : 0;
+    let decB = sB.includes('.') ? sB.split('.')[1].length : 0;
+    const maxDec = Math.max(decA, decB);
+    
+    sA = a.toFixed(maxDec); sB = b.toFixed(maxDec);
+    let resStr = (a + b).toFixed(maxDec);
+
+    const maxLength = Math.max(sA.length, sB.length, resStr.length);
+    sA = sA.padStart(maxLength, ' '); sB = sB.padStart(maxLength, ' ');
+    resStr = resStr.padStart(maxLength, ' ');
+    
+    let carriesArr = Array(maxLength).fill(' ');
+    let carry = 0;
+    for (let i = maxLength - 1; i >= 0; i--) {
+        if (sA[i] === '.') continue;
+        let dA = sA[i] === ' ' ? 0 : parseInt(sA[i]);
+        let dB = sB[i] === ' ' ? 0 : parseInt(sB[i]);
+        let sum = dA + dB + carry;
+        carry = Math.floor(sum / 10);
+        if (carry > 0) {
+            let prevJ = i - 1;
+            while(prevJ >= 0 && sA[prevJ] === '.') prevJ--;
+            if (prevJ >= 0) carriesArr[prevJ] = carry;
+        }
+    }
+    
+    let linhas = [];
+    const sp = (n) => " ".repeat(Math.max(0, n));
+    let sAHtml = "";
+    for(let i=0; i<maxLength; i++) {
+        let topVal = carriesArr[i];
+        sAHtml += createCharBlock(sA[i], topVal);
+    }
+    
+    const offsetEsq = 2;
+    linhas.push(sp(offsetEsq) + sAHtml);
+    linhas.push("+ " + sB);
+    linhas.push("-".repeat(maxLength + offsetEsq));
+    linhas.push(sp(offsetEsq) + `<span style="color: var(--success-color);">${resStr}</span>`);
+    
+    let html = `<div class="conta-visual" style="white-space: pre; line-height: 1.4; overflow-x: auto; font-size: 1.3rem; padding-top: 1.5em;">\n${linhas.join('\n')}\n</div>`;
+    
+    return {passo: `Calculando ${a} + ${b}`, isHtml: true, visual: html};
+}
+
+function gerarExplicacaoSubtracao(a, b) {
+    let negativo = false;
+    if (b > a) { let temp = a; a = b; b = temp; negativo = true; }
+
+    let sA = String(a), sB = String(b);
+    let decA = sA.includes('.') ? sA.split('.')[1].length : 0;
+    let decB = sB.includes('.') ? sB.split('.')[1].length : 0;
+    const maxDec = Math.max(decA, decB);
+    
+    sA = a.toFixed(maxDec).replace('.', '');
+    sB = b.toFixed(maxDec).replace('.', '').padStart(sA.length, '0');
+    
+    let numA = sA.split('').map(Number);
+    let numB = sB.split('').map(Number);
+    
+    let cortes = Array(numA.length).fill(false);
+    let emCima = Array(numA.length).fill('&nbsp;');
+    let resultado = [];
+    
+    for (let i = numA.length - 1; i >= 0; i--) {
+        if (numA[i] < numB[i]) {
+            let vizinho = i - 1;
+            while (vizinho >= 0 && numA[vizinho] === 0) {
+                numA[vizinho] = 9; cortes[vizinho] = true; emCima[vizinho] = '9';
+                vizinho--;
+            }
+            if (vizinho >= 0) {
+                numA[vizinho] -= 1; cortes[vizinho] = true; emCima[vizinho] = String(numA[vizinho]);
+                emCima[i] = '1'; numA[i] += 10;
+            }
+        }
+        resultado.unshift(numA[i] - numB[i]);
+    }
+
+    let origA = a.toFixed(maxDec).split('');
+    let posPonto = origA.indexOf('.');
+    
+    let html = `<div class="conta-visual sub-grid">`;
+    html += `<div class="sub-num">`;
+    let offset = 0;
+    for(let i=0; i<origA.length; i++) {
+        if(origA[i] === '.') { html += `.`; offset++; continue; }
+        let topVal = emCima[i-offset];
+        let supHtml = (topVal !== '&nbsp;' && topVal !== ' ') ? `<sup style="position:absolute; top:-12px; left:-2px; color:var(--accent-color); font-size:0.85rem; font-family:'Inter', sans-serif; font-weight:600;">${topVal}</sup>` : '';
+        if(cortes[i-offset]) {
+             html += `<span class="corte-strike" style="position:relative; width:16px; text-align:center; display:inline-block;">${supHtml}${origA[i]}</span>`;
+        } else {
+             html += `<span style="position:relative; width:16px; text-align:center; display:inline-block;">${supHtml}${origA[i]}</span>`;
+        }
+    }
+    html += `</div><div class="sub-num">- ${b.toFixed(maxDec).padStart(origA.length, ' ').replace(/ /g, '&nbsp;')}</div>`;
+    html += `<div class="linha-traco"></div>`;
+    let resStr = (a - b).toFixed(maxDec).padStart(origA.length, ' ').replace(/ /g, '&nbsp;');
+    html += `<div class="sub-num" style="color: var(--success-color);">${negativo ? '-' : '&nbsp;'}${resStr}</div></div>`;
+
+    return {passo: `Calculando ${negativo ? b : a} - ${negativo ? a : b}`, isHtml: true, visual: html};
+}
+
+function gerarExplicacaoMultiplicacao(a, b) {
+    let absA = Math.abs(a);
+    let absB = Math.abs(b);
+    let isNeg = (a < 0) !== (b < 0) && (a !== 0 && b !== 0);
+    
+    let sA = String(absA);
+    let sB = String(absB);
+    
+    // Se os números forem minúsculos/enormes e o JS usar notação científica (ex: 1e-10), fazemos fallback visual seguro
+    if (sA.includes('e') || sB.includes('e')) {
+        return {passo: `Calculando ${a} × ${b}`, isHtml: false, visual: `Multiplicação direta:\n${a} × ${b} = ${a*b}`};
+    }
+    
+    let resNative = String(absA * absB);
+    const cleanB = sB.replace('.', '');
+    
+    const width = Math.max(sA.length + 2, sB.length + 2, resNative.length + (isNeg ? 1 : 0));
+    let intermediarios = [];
+    
+    let bIndex = 0;
+    for (let i = sB.length - 1; i >= 0; i--) {
+        if (sB[i] === '.') continue;
+        const d2 = parseInt(sB[i]); 
+        let parcial = '', carry = 0; 
+        let carriesArr = Array(sA.length).fill(' ');
+        
+        for (let j = sA.length - 1; j >= 0; j--) {
+            if (sA[j] === '.') continue;
+            const produto = (parseInt(sA[j]) * d2) + carry;
+            parcial = (produto % 10) + parcial; 
+            carry = Math.floor(produto / 10);
+            if (carry > 0) {
+                let prevJ = j - 1;
+                while(prevJ >= 0 && sA[prevJ] === '.') prevJ--;
+                if (prevJ >= 0) carriesArr[prevJ] = carry;
+            }
+        }
+        if (carry > 0) parcial = carry + parcial;
+        
+        intermediarios.push({ carries: carriesArr.join(''), produto: parcial + ' '.repeat(bIndex) });
+        bIndex++;
+    }
+    
+    const firstCarryLine = intermediarios.length > 0 ? intermediarios[0].carries : '';
+    
+    let linhas = [];
+    const sp = (n) => " ".repeat(Math.max(0, n));
+    
+    let sAHtml = sp(width - sA.length);
+    for(let i=0; i<sA.length; i++) {
+        let topVal = firstCarryLine[i] || ' ';
+        let supHtml = (topVal !== ' ') ? `<sup style="position:absolute; top:-12px; left:-2px; color:var(--accent-color); font-size:0.85rem; font-family:'Inter', sans-serif; font-weight:600;">${topVal}</sup>` : '';
+        sAHtml += `<span style="position:relative; display:inline-block;">${supHtml}${sA[i]}</span>`;
+    }
+    linhas.push(sAHtml);
+    
+    linhas.push(sp(width - sB.length - 2) + "× " + sB);
+    linhas.push("-".repeat(width));
+    
+    if (cleanB.length > 1) {
+        intermediarios.forEach(item => { linhas.push(sp(width - item.produto.length) + item.produto); });
+        linhas.push("-".repeat(width));
+    }
+    
+    let finalStr = isNeg ? '-' + resNative : resNative;
+    linhas.push(sp(width - finalStr.length) + finalStr);
+    
+    let html = `<div class="conta-visual" style="white-space: pre; line-height: 1.4; overflow-x: auto; font-size: 1.3rem; padding-top: 1.5em;">\n${linhas.join('\n')}\n</div>`;
+    
+    return {passo: `Calculando ${a} × ${b}`, isHtml: true, visual: html};
+}
+
+function gerarExplicacaoDivisao(dividendo, divisor) {
+    if (divisor === 0) return {passo: "Erro", isHtml: false, visual: "Divisão por zero!"};
+    
+    let html = `<div style="display:flex; justify-content:center; margin-bottom: 15px; font-family:'Inter', sans-serif; align-items: center; gap: 10px;">
+        <div class="fracao" style="font-size: 1.5rem; color: var(--accent-color); font-weight: 500;">
+            <span class="fracao-num">${dividendo}</span>
+            <span>${divisor}</span>
+        </div>
+        <span style="color: var(--text-muted); font-size: 1.2rem;">=</span>
+    </div>`;
+
+    let d1 = String(dividendo);
+    let d2 = String(divisor);
+    let dec1 = d1.includes('.') ? d1.split('.')[1].length : 0;
+    let dec2 = d2.includes('.') ? d2.split('.')[1].length : 0;
+    let maxDec = Math.max(dec1, dec2);
+    let divInt = Math.round(dividendo * Math.pow(10, maxDec));
+    let divisorInt = Math.round(divisor * Math.pow(10, maxDec));
+
+    let dStr = String(divInt);
+    let maxCasas = 5;
+
+    let qStr = "";
+    let valorAtualStr = "";
+    let pos = 0;
+    let decimalAdicionado = false;
+    let restosVistos = new Map();
+
+    let passosSubtracao = [];
+
+    while (pos < dStr.length || (parseInt(valorAtualStr||"0") !== 0 && qStr.replace('.','').length < maxCasas + 2)) {
+        if (pos < dStr.length) {
+            valorAtualStr += dStr[pos];
+            pos++;
+        } else {
+            if (!decimalAdicionado) {
+                if (qStr === "") qStr = "0";
+                qStr += ".";
+                decimalAdicionado = true;
+            }
+            valorAtualStr += "0";
+            pos++;
+
+            let estado = valorAtualStr;
+            if (restosVistos.has(estado)) {
+                qStr += "...";
+                break;
+            }
+            restosVistos.set(estado, true);
+        }
+
+        let valorAtual = parseInt(valorAtualStr, 10);
+
+        if (valorAtual < divisorInt) {
+            if (qStr !== "" && qStr !== "0.") qStr += "0";
+            else if (pos === dStr.length && qStr === "") qStr += "0";
+            continue;
+        }
+
+        let q = Math.floor(valorAtual / divisorInt);
+        qStr += String(q);
+        let sub = q * divisorInt;
+        let novoResto = valorAtual - sub;
+
+        passosSubtracao.push({ minuendo: valorAtual, subtraendo: sub, resto: novoResto, posFinal: pos });
+
+        valorAtualStr = String(novoResto);
+        if (novoResto === 0 && pos >= dStr.length) break;
+    }
+    if (qStr === "") qStr = "0";
+    if (qStr.endsWith('.')) qStr = qStr.slice(0, -1);
+
+    let linhas = [];
+    const sp = (n) => " ".repeat(Math.max(0, n));
+    const offsetEsq = 2;
+
+    let chave1 = ` | <span style="color:var(--text-main)">${divisorInt}</span>`;
+    // CORREÇÃO: Aqui estava o +<span... Agora é apenas um traço -<span... para formar a chave perfeitamente reta.
+    let chave2 = ` -<span style="color:var(--text-muted)">${"-".repeat(Math.max(String(divisorInt).length, qStr.length))}</span>`;
+    let chave3 = ` | <span style="color:var(--success-color)">${qStr}</span>`;
+
+    linhas.push(sp(offsetEsq) + dStr + chave1);
+    linhas.push(sp(offsetEsq + dStr.length) + chave2);
+    linhas.push(sp(offsetEsq + dStr.length) + chave3);
+
+    for (let k = 0; k < passosSubtracao.length; k++) {
+        let passo = passosSubtracao[k];
+        let sA = String(passo.minuendo);
+        let sB = String(passo.subtraendo).padStart(sA.length, '0');
+        let numA = sA.split('').map(Number);
+        let numB = sB.split('').map(Number);
+        let cortes = Array(numA.length).fill(false);
+        let emCima = Array(numA.length).fill(' ');
+        let teveCorte = false;
+
+        for (let i = numA.length - 1; i >= 0; i--) {
+            if (numA[i] < numB[i]) {
+                teveCorte = true;
+                let vizinho = i - 1;
+                while (vizinho >= 0 && numA[vizinho] === 0) {
+                    numA[vizinho] = 9; cortes[vizinho] = true; emCima[vizinho] = '9';
+                    vizinho--;
+                }
+                if (vizinho >= 0) {
+                    numA[vizinho] -= 1; cortes[vizinho] = true; emCima[vizinho] = String(numA[vizinho]);
+                    emCima[i] = '1'; numA[i] += 10;
+                }
+            }
+        }
+
+        let startIdx = passo.posFinal - sA.length;
+
+        let minHtml = sp(offsetEsq + startIdx);
+        for(let i=0; i<sA.length; i++) {
+            let topVal = emCima[i];
+            let isStrike = cortes[i];
+            minHtml += createCharBlock(sA[i], topVal, isStrike);
+        }
+        linhas.push(minHtml);
+
+        let subStr = String(passo.subtraendo);
+        let padSub = passo.posFinal - subStr.length;
+        linhas.push(`<span style="color:var(--error-color)">${sp(offsetEsq + padSub - 1)}-${subStr}</span>`);
+
+        let tracoLen = sA.length;
+        linhas.push(sp(offsetEsq + startIdx) + `<span style="color:var(--text-muted)">${"-".repeat(tracoLen)}</span>`);
+    }
+
+    if (passosSubtracao.length > 0) {
+        let ultimoPasso = passosSubtracao[passosSubtracao.length - 1];
+        let restoStr = String(ultimoPasso.resto);
+        let startIdx = ultimoPasso.posFinal - restoStr.length;
+        linhas.push(sp(offsetEsq + startIdx) + `<span style="color:var(--text-main)">${restoStr}</span>`);
+    } else {
+        linhas.push(sp(offsetEsq + dStr.length - 1) + `<span style="color:var(--text-main)">0</span>`);
+    }
+
+    html += `<div class="conta-visual" style="white-space: pre; line-height: 1.4; overflow-x: auto; font-size: 1.3rem; padding-top: 1.5em;">`;
+    html += linhas.join("\n");
+    html += `</div>`;
+
+    return {passo: `Calculando ${dividendo} ÷ ${divisor}`, isHtml: true, visual: html};
+}
+
+function gerarExplicacaoPorcentagem(n) {
+    const divInfo = gerarExplicacaoDivisao(n, 100);
+    return { passo: `Divisão (porcentagem)`, isHtml: true, visual: `<div style="margin-bottom:10px; font-family:'Inter',sans-serif; color: var(--text-muted);"><strong>${n}% = ${n} ÷ 100</strong></div>${divInfo.visual}` };
+}
+
+function gerarExplicacaoRaizQuadrada(n) {
+    const resultado = Math.sqrt(n);
+    if (Number.isInteger(resultado)) {
+        const prova = gerarExplicacaoMultiplicacao(resultado, resultado);
+        return { passo: `Calculando √${n}`, isHtml: false, visual: `A raiz quadrada de ${n} é ${resultado}, pois ${resultado} × ${resultado} = ${n}.\n\nProva da multiplicação:\n${prova.visual}` };
+    } else {
+        return { passo: `Calculando √${n}`, isHtml: false, visual: `A raiz quadrada de ${n} não é um número inteiro.\nResultado aproximado: ${resultado}` };
+    }
+}
+
+function gerarExplicacaoPotencia(base, expoente) {
+    let expoenteSup = toSup(expoente);
+    let html = `<div style="font-family:'Inter',sans-serif; color:var(--text-muted); margin-bottom:10px;">Para calcular <strong style="color:var(--accent-color); font-size:1.2em;">${base}${expoenteSup}</strong>, multiplicamos ${base} por si mesmo, ${expoente} vezes.</div>`;
+    if (expoente > 1 && expoente <= 10 && Number.isInteger(expoente)) {
+        let calcTemp = base;
+        for (let i = 1; i < expoente; i++) {
+            html += `<div style="margin-top:15px; color:var(--text-main); font-family:'Inter',sans-serif;"><strong>Passo ${i}:</strong> ${calcTemp} × ${base}</div>`;
+            html += `<div style="margin-top:5px; margin-bottom:10px;">${gerarExplicacaoMultiplicacao(calcTemp, base).visual}</div>`;
+            calcTemp *= base;
+        }
+    } else { 
+        html += `<div style="margin-top:15px; color:var(--text-main); font-family:'Inter',sans-serif;">Cálculo direto.<br>Valor da potência: ${Math.pow(base, expoente)}</div>`; 
+    }
+    return { passo: `Calculando ${base}${expoenteSup}`, isHtml: true, visual: html };
+}
+
+function gerarExplicacaoFatorial(n) {
+    if (n < 0 || !Number.isInteger(n)) return {passo: "Erro", isHtml: false, visual: "Fatorial só se aplica a inteiros não-negativos."};
+    if (n > 170) return {passo: "Erro", isHtml: false, visual: "Número muito grande para fatorial (limite: 170)."};
+    if (n === 0 || n === 1) return {passo: `Calculando ${n}!`, isHtml: false, visual: `${n}! = 1`};
+    let texto = `${n}! = ${n}`;
+    let resultado = 1;
+    for (let i = n - 1; i > 1; i--) { texto += ` × ${i}`; resultado *= i; }
+    resultado *= n; texto += ` × 1\n`;
+    if (n <= 8 && n >= 2) {
+        texto += `\nPasso a passo das multiplicações:\n`;
+        let calcTemp = n;
+        for (let i = n - 1; i >= 2; i--) {
+            texto += `\n--- Multiplicando por ${i} ---\n`;
+            texto += gerarExplicacaoMultiplicacao(calcTemp, i).visual + `\n`;
+            calcTemp *= i;
+        }
+    } else if (n > 8) {
+        texto += `\n(Passo a passo visual omitido por ser muito longo)\nValor do fatorial: ${resultado}`;
+    }
+    return {passo: `Calculando ${n}!`, isHtml: false, visual: texto};
+}
+
+function gerarExplicacaoTrig(funcao, angulo, anguloOriginal, emDeg) {
+    let texto = `Calculando ${funcao}(${anguloOriginal}${emDeg ? '°' : ' rad'}).\n`;
+    if (emDeg) { texto += `1. Convertendo graus para radianos:\n${anguloOriginal}° × (π / 180) = ${angulo} rad.\n\n`; }
+    let resultado;
+    switch(funcao) {
+        case 'sin': resultado = Math.sin(angulo); break; case 'cos': resultado = Math.cos(angulo); break; case 'tan': resultado = Math.tan(angulo); break;
+        case 'asin': resultado = Math.asin(angulo); break; case 'acos': resultado = Math.acos(angulo); break; case 'atan': resultado = Math.atan(angulo); break;
+    }
+    if (emDeg && ['asin', 'acos', 'atan'].includes(funcao)) {
+        texto += `Convertendo resultado para graus:\n${resultado} rad × (180 / π) = ${(resultado * 180 / Math.PI)}°.\n\n`;
+        resultado = resultado * 180 / Math.PI;
+    }
+    texto += `Valor: ${resultado}`;
+    return {passo: `Calculando ${funcao}(${anguloOriginal})`, isHtml: false, visual: texto};
+}
+
+function gerarExplicacaoLog(funcao, n) {
+    let texto = `Calculando ${funcao}(${n}).\n`;
+    texto += funcao === 'lg' ? `Procuramos 'x' tal que 10^x = ${n}.\n` : `Procuramos 'x' tal que e^x = ${n}.\n`;
+    texto += `Valor: ${funcao === 'lg' ? Math.log10(n) : Math.log(n)}`;
+    return {passo: `Calculando ${funcao}(${n})`, isHtml: false, visual: texto};
+}
+
+// =======================================================================
+// === FUNÇÕES DE UI E ESTADO ============================================
+// =======================================================================
+
+function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+}
+
+function formatarParaDisplay(expr) {
+    if (!expr) return "";
+    let html = expr;
+    html = html.replace(/(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)/g, '<span class="fracao" style="vertical-align: middle; margin: 0 2px; font-size: 0.9em; display: inline-flex;"><span class="fracao-num">$1</span><span>$2</span></span>');
+    html = html.replace(/(\d+(?:\.\d+)?)\/(?!\d)/g, '<span class="fracao" style="vertical-align: middle; margin: 0 2px; font-size: 0.9em; display: inline-flex;"><span class="fracao-num">$1</span><span>&nbsp;</span></span>');
+    html = html.replace(/\^(\d+(?:\.\d+)?)/g, (match, p1) => `<span style="color:var(--accent-color); font-weight:600;">${toSup(p1)}</span>`);
+    return html;
+}
+
+function atualizarDisplay() { displayExpr.innerHTML = formatarParaDisplay(expressao); displayValue.textContent = "0"; displayValue.classList.remove("erro"); }
+function limparTudo() { expressao = ""; expressaoParaCalculo = ""; ultimosPassos = []; detalhesDiv.style.display = "none"; displayExpr.innerHTML = ""; displayValue.textContent = "0"; displayValue.classList.remove("erro"); }
+function apagarUltimo() {
+    if (expressao.endsWith('(')) expressao = expressao.replace(/(sin|cos|tan|asin|acos|atan|lg|ln|√)\($/i, "");
+    else expressao = expressao.slice(0, -1);
+    displayExpr.innerHTML = formatarParaDisplay(expressao);
+}
+function adicionarInput(valor) {
+    const ultimoChar = expressao.slice(-1); const operadores = "+−×÷^/";
+    if (valor === '.' && ultimoChar === '.') return;
+    if (operadores.includes(valor) && operadores.includes(ultimoChar)) expressao = expressao.slice(0, -1) + valor;
+    else expressao += valor;
+    displayExpr.innerHTML = formatarParaDisplay(expressao);
+}
+function alternarTeclados() {
+    const normalVisivel = tecladoNormal.style.display !== "none";
+    tecladoNormal.style.display = normalVisivel ? "none" : "grid";
+    tecladoCientifico.style.display = normalVisivel ? "grid" : "none";
+    mtBtnGeral.textContent = normalVisivel ? "🔢 Mudar para Padrão" : "⚗️ Mudar para Científica";
+}
+function toggleDeg() { estado.modeDeg = !estado.modeDeg; btnDeg.textContent = estado.modeDeg ? "DEG" : "RAD"; }
+function toggleSecond() {
+    estado.secondState = !estado.secondState;
+    if (estado.secondState) {
+        btnSecond.style.background = "var(--accent-color)"; btnSecond.style.color = "white";
+        btnSin.textContent = "asin"; btnSin.onclick = () => adicionarInput('asin(');
+        btnCos.textContent = "acos"; btnCos.onclick = () => adicionarInput('acos(');
+        btnTan.textContent = "atan"; btnTan.onclick = () => adicionarInput('atan(');
+        btnLg.textContent = "10^x"; btnLg.onclick = () => adicionarInput('10^(');
+        btnLn.textContent = "e^x";  btnLn.onclick = () => adicionarInput('e^(');
+    } else {
+        btnSecond.style.background = ""; btnSecond.style.color = "";
+        btnSin.textContent = "sin"; btnSin.onclick = () => adicionarInput('sin(');
+        btnCos.textContent = "cos"; btnCos.onclick = () => adicionarInput('cos(');
+        btnTan.textContent = "tan"; btnTan.onclick = () => adicionarInput('tan(');
+        btnLg.textContent = "lg";  btnLg.onclick = () => adicionarInput('lg(');
+        btnLn.textContent = "ln";  btnLn.onclick = () => adicionarInput('ln(');
+    }
+}
+
+// =======================================================================
+// === MOTOR DE CÁLCULO (RPN / SHUNTING-YARD) ============================
+// =======================================================================
+const precedencia = { '+': 1, '−': 1, '×': 2, '÷': 2, '/': 2, '^': 3, '√': 4, 'u-': 4, '!': 4, '%': 4 };
+const associatividade = { '^': 'direita', '+': 'esquerda', '−': 'esquerda', '×': 'esquerda', '÷': 'esquerda', '/': 'esquerda', 'u-': 'direita', '!': 'esquerda', '%': 'esquerda', '√': 'direita' };
+const constantes = { 'pi': Math.PI, 'e': Math.E };
+
+function tokenize(expr) {
+    let calcExpr = expr.replace(/×/g, '*').replace(/−/g, '-').replace(/π/g, 'pi').replace(/√/g, 'sqrt');
+    
+    // Injeta multiplicações implícitas para constantes e parênteses (ex: 2pi -> 2*pi, 2(3) -> 2*(3))
+    calcExpr = calcExpr.replace(/(\d)(pi|e|sin|cos|tan|asin|acos|atan|lg|ln|sqrt|\()/ig, '$1*$2');
+    calcExpr = calcExpr.replace(/(\))(pi|e|sin|cos|tan|asin|acos|atan|lg|ln|sqrt|\(|\d)/ig, '$1*$2');
+    calcExpr = calcExpr.replace(/(pi|e)(\d|\()/ig, '$1*$2');
+
+    const tokens = []; const regex = /(\d+\.?\d*|\.\d+)|(pi|e|sin|cos|tan|asin|acos|atan|lg|ln|sqrt)|([+\-*÷/^()!,%])/ig;
+    let match; let ultimoTokenTipo = null;
+    while ((match = regex.exec(calcExpr)) !== null) {
+        const token = match[0];
+        if (match[1]) { tokens.push({ type: 'numero', value: parseFloat(token) }); ultimoTokenTipo = 'numero'; }
+        else if (match[2]) {
+            const tokenLower = token.toLowerCase();
+            if (tokenLower === 'pi' || tokenLower === 'e') { tokens.push({ type: 'numero', value: constantes[tokenLower] }); ultimoTokenTipo = 'numero'; }
+            else { tokens.push({ type: 'funcao', value: tokenLower }); ultimoTokenTipo = 'funcao'; }
+        } else if (match[3]) {
+            if (token === '-' && (ultimoTokenTipo === null || ultimoTokenTipo === 'operador' || ultimoTokenTipo === 'paren_esq')) {
+                tokens.push({ type: 'operador', value: 'u-' });
+            } else { tokens.push({ type: 'operador', value: token }); }
+            ultimoTokenTipo = (token === '(') ? 'paren_esq' : (token === ')') ? 'paren_dir' : 'operador';
+        }
+    }
+    return tokens;
+}
+
+function toRPN(tokens) {
+    const saida = []; const operadores = [];
+    tokens.forEach(token => {
+        if (token.type === 'numero') saida.push(token);
+        else if (token.type === 'funcao') operadores.push(token);
+        else if (token.value === ',') {
+            while (operadores.length > 0 && operadores[operadores.length - 1].value !== '(') saida.push(operadores.pop());
+        } else if (token.type === 'operador') {
+            if (token.value === '(') operadores.push(token);
+            else if (token.value === ')') {
+                while (operadores.length > 0 && operadores[operadores.length - 1].value !== '(') saida.push(operadores.pop());
+                if (operadores.length === 0) throw new Error("Erro: Parênteses.");
+                operadores.pop();
+                if (operadores.length > 0 && operadores[operadores.length - 1].type === 'funcao') saida.push(operadores.pop());
+            } else {
+                const op1 = token.value;
+                while (operadores.length > 0) {
+                    const op2 = operadores[operadores.length - 1].value;
+                    if (op2 === '(') break;
+                    const p1 = precedencia[op1] || 0; const p2 = precedencia[op2] || 0; const a1 = associatividade[op1] || 'esquerda';
+                    if ((a1 === 'esquerda' && p1 <= p2) || (a1 === 'direita' && p1 < p2)) saida.push(operadores.pop());
+                    else break;
+                }
+                operadores.push(token);
+            }
+        }
+    });
+    while (operadores.length > 0) {
+        const op = operadores.pop();
+        if (op.value === '(') throw new Error("Erro: Parênteses.");
+        saida.push(op);
+    }
+    return saida;
+}
+
+function evalRPNwithSteps(rpn) {
+    const pilha = []; const logs = [];
+    rpn.forEach(token => {
+        if (token.type === 'numero') { 
+            pilha.push({ val: token.value, num: token.value, den: 1, isFrac: false }); 
+        } else {
+            let explicacao;
+            let resObj = { val: 0, num: 0, den: 1, isFrac: false };
+
+            if (token.value === 'u-' || token.value === '!' || token.value === '%' || token.type === 'funcao') {
+                if (pilha.length < 1) throw new Error("Sintaxe inválida");
+                const aObj = pilha.pop(); const a = aObj.val;
+                let resultado;
+                switch(token.value) {
+                    case 'u-': 
+                        resultado = -a; 
+                        if(aObj.isFrac) {
+                            resObj.isFrac = true; resObj.num = -aObj.num; resObj.den = aObj.den;
+                            explicacao = {passo: `Invertendo sinal da fração`, isHtml: true, visual: `<div style="padding:10px;">Fica: ${formatFrac(resObj.num, resObj.den)}</div>`}; 
+                        } else { explicacao = {passo: `Invertendo sinal`, isHtml: false, visual: `Oposto de ${a}: ${-a}`}; }
+                        break;
+                    case '!':
+                        if (a < 0 || !Number.isInteger(a)) throw new Error("Fatorial inválido");
+                        if (a > 170) throw new Error("Overflow");
+                        resultado = 1; for (let i = 2; i <= a; i++) resultado *= i;
+                        explicacao = gerarExplicacaoFatorial(a); break;
+                    case '%': resultado = a / 100; explicacao = gerarExplicacaoPorcentagem(a); break;
+                    case 'sqrt': if (a < 0) throw new Error("Domínio"); resultado = Math.sqrt(a); explicacao = gerarExplicacaoRaizQuadrada(a); break;
+                    case 'ln': if (a <= 0) throw new Error("Domínio"); resultado = Math.log(a); explicacao = gerarExplicacaoLog('ln', a); break;
+                    case 'lg': if (a <= 0) throw new Error("Domínio"); resultado = Math.log10(a); explicacao = gerarExplicacaoLog('lg', a); break;
+                    case 'sin': case 'cos': case 'tan':
+                        let anguloRad = estado.modeDeg ? a * Math.PI / 180 : a;
+                        if (token.value === 'tan' && Math.abs(anguloRad % Math.PI).toFixed(10) === (Math.PI / 2).toFixed(10)) throw new Error("Indefinido");
+                        resultado = Math[token.value](anguloRad); explicacao = gerarExplicacaoTrig(token.value, anguloRad, a, estado.modeDeg); break;
+                    case 'asin': case 'acos': case 'atan':
+                        if (['asin', 'acos'].includes(token.value) && (a < -1 || a > 1)) throw new Error("Domínio");
+                        resultado = Math[token.value](a); if (estado.modeDeg) resultado = resultado * 180 / Math.PI;
+                        explicacao = gerarExplicacaoTrig(token.value, a, a, false); break;
+                }
+                if (token.value !== 'u-') { resObj.val = resultado; resObj.num = resultado; resObj.den = 1; resObj.isFrac = false; }
+                else { resObj.val = resultado; }
+            } else {
+                if (pilha.length < 2) throw new Error("Sintaxe inválida");
+                const bObj = pilha.pop(); const aObj = pilha.pop();
+                const b = bObj.val; const a = aObj.val;
+                
+                if (token.value === '/') {
+                    if (b === 0) throw new Error("Divisão por zero");
+                    resObj.val = a / b;
+                    if (Number.isInteger(a) && Number.isInteger(b)) {
+                        let div = mdc(a, b);
+                        resObj.num = a / div; resObj.den = b / div; resObj.isFrac = true;
+                        if (resObj.den < 0) { resObj.num *= -1; resObj.den *= -1; }
+                        explicacao = { passo: `Montando Fração`, isHtml: true, visual: `<div style="padding:10px;">Fração interpretada: ${formatFrac(resObj.num, resObj.den)}</div>` };
+                    } else {
+                        resObj.num = resObj.val; resObj.isFrac = false;
+                        explicacao = gerarExplicacaoDivisao(a, b);
+                    }
+                } 
+                else if ((aObj.isFrac || bObj.isFrac) && ['+', '-', '*', '÷'].includes(token.value)) {
+                    let f1 = aObj.isFrac ? aObj : { num: aObj.val, den: 1, isFrac: true };
+                    let f2 = bObj.isFrac ? bObj : { num: bObj.val, den: 1, isFrac: true };
+                    
+                    let info = gerarExplicacaoFracao(f1, f2, token.value);
+                    explicacao = info;
+                    resObj.val = info.resN / info.resD; resObj.num = info.resN; resObj.den = info.resD; resObj.isFrac = true;
+                }
+                else {
+                    switch(token.value) {
+                        case '+': resObj.val = a + b; explicacao = gerarExplicacaoSoma(a, b); break;
+                        case '-': resObj.val = a - b; explicacao = gerarExplicacaoSubtracao(a, b); break;
+                        case '*': resObj.val = a * b; explicacao = gerarExplicacaoMultiplicacao(a, b); break;
+                        case '÷': if (b === 0) throw new Error("Divisão por zero"); resObj.val = a / b; explicacao = gerarExplicacaoDivisao(a, b); break;
+                        case '^': resObj.val = Math.pow(a, b); explicacao = gerarExplicacaoPotencia(a, b); break;
+                    }
+                    resObj.num = resObj.val; resObj.isFrac = false;
+                }
+            }
+            logs.push({ type: 'header', content: explicacao.passo });
+            if(explicacao.isHtml) { logs.push({ type: 'html', content: explicacao.visual }); } 
+            else { logs.push({ type: 'visual', content: explicacao.visual }); }
+            pilha.push(resObj);
+        }
+    });
+    if (pilha.length !== 1) throw new Error("Malformada.");
+    const resultadoFinal = pilha[0];
+    if (!isFinite(resultadoFinal.val)) throw new Error("Overflow");
+    
+    let valStr = parseFloat(resultadoFinal.val.toPrecision(12)).toString();
+    let msgFinal = `Resultado Final: ${valStr}`;
+    if (resultadoFinal.isFrac && resultadoFinal.den !== 1) {
+        msgFinal = `<div style="display:flex; align-items:center; justify-content:center; gap: 10px;">Resultado Final: ${formatFrac(resultadoFinal.num, resultadoFinal.den)} <span style="font-family:'Inter',sans-serif; font-size:1.1rem; color:var(--text-muted);">≈ ${valStr}</span></div>`;
+        logs.push({type: 'final-html', content: msgFinal});
+    } else {
+        logs.push({type: 'final', content: msgFinal});
+    }
+    return { result: resultadoFinal.val, logs: logs };
+}
+
+function calcular() {
+    // Guarda se o painel já estava aberto antes de resetar
+    let estavaAberto = detalhesDiv.style.display === "block";
+    
+    ultimosPassos = []; detalhesDiv.innerHTML = ""; detalhesDiv.style.display = "none";
+    if (!expressao) { displayValue.textContent = "0"; return; }
+    
+    let exprParaCalc = expressao;
+    
+    if (/[+\-×÷^/]$/.test(exprParaCalc)) {
+        displayValue.textContent = "Erro"; displayValue.classList.add("erro");
+        ultimosPassos.push({ type: 'error', content: "A expressão não pode terminar com um operador." });
+        if (estavaAberto) mostrarDetalhes(); 
+        return;
+    }
+    
+    const abertos = (exprParaCalc.match(/\(/g) || []).length; 
+    const fechados = (exprParaCalc.match(/\)/g) || []).length;
+    if (abertos !== fechados) {
+        displayValue.textContent = "Erro"; displayValue.classList.add("erro");
+        ultimosPassos.push({ type: 'error', content: "Parênteses desbalanceados. Feche todos os parênteses antes de calcular." });
+        if (estavaAberto) mostrarDetalhes(); 
+        return;
+    }
+
+    try {
+        const tokens = tokenize(exprParaCalc); const rpn = toRPN(tokens);
+        ultimosPassos.push({ type: 'intro', content: `Analisando: ${escapeHTML(exprParaCalc)}` });
+        const { result, logs } = evalRPNwithSteps(rpn);
+        ultimosPassos = ultimosPassos.concat(logs);
+        let resultadoFormatado = Number(result.toPrecision(13)).toString().replace('.', ',');
+        displayValue.textContent = resultadoFormatado; displayValue.classList.remove("erro");
+        salvarHistorico(expressao, resultadoFormatado, ultimosPassos);
+    } catch (error) {
+        displayValue.textContent = "Erro"; displayValue.classList.add("erro");
+        ultimosPassos.push({ type: 'error', content: error.message });
+    }
+    
+    // Só reabre automaticamente se já estivesse aberto antes
+    if (estavaAberto) mostrarDetalhes();
+}
+
+// =======================================================================
+// === HISTÓRICO E DETALHES (UI HANDLERS) ================================
+// =======================================================================
+
+function salvarHistorico(expr, res, passos) {
+    historico.unshift({ id: Date.now(), expressao: expr, resultado: res, passos: passos });
+    if (historico.length > 50) historico.pop();
+    localStorage.setItem("calcHistorico", JSON.stringify(historico));
+}
+
+historicoBtn.addEventListener("click", () => {
+    detalhesDiv.style.display = "none";
+    if (historicoDiv.style.display !== "block") {
+        historicoDiv.style.display = "block"; historicoDiv.innerHTML = "";
+        if (historico.length) {
+            historico.forEach(reg => {
+                const itemDiv = document.createElement("div");
+                itemDiv.innerHTML = `<small>${reg.expressao}</small> = ${reg.resultado}`;
+                itemDiv.onclick = () => carregarDoHistorico(reg.id);
+                historicoDiv.appendChild(itemDiv);
+            });
+        } else { historicoDiv.innerHTML = "Nenhum cálculo no histórico."; }
+    } else { historicoDiv.style.display = "none"; }
+});
+
+function carregarDoHistorico(id) {
+    const registro = historico.find(h => h.id === id); if (!registro) return;
+    expressao = registro.expressao; displayExpr.innerHTML = formatarParaDisplay(expressao);
+    displayValue.textContent = registro.resultado; displayValue.classList.remove("erro");
+    ultimosPassos = registro.passos; historicoDiv.style.display = "none"; mostrarDetalhes();
+}
+
+detalhesBtn.addEventListener("click", mostrarDetalhes);
+
+function mostrarDetalhes() {
+    historicoDiv.style.display = "none";
+    if (detalhesDiv.style.display !== "block") {
+        detalhesDiv.style.display = "block"; let html = '';
+        if (ultimosPassos.length) {
+            ultimosPassos.forEach(passo => {
+                if(passo.type === 'intro') html += `<pre class="info">${passo.content}</pre>`;
+                if(passo.type === 'visual') html += `<pre class="info">${passo.content}</pre>`;
+                if(passo.type === 'html') html += passo.content;
+                if(passo.type === 'header') html += `<h3>${passo.content}</h3>`;
+                if(passo.type === 'final') html += `<pre class="info resultado-final">${passo.content}</pre>`;
+                if(passo.type === 'final-html') html += `<div class="info resultado-final" style="padding:15px; font-family:'Inter', sans-serif;">${passo.content}</div>`;
+                if(passo.type === 'error') html += `<pre class="info erro-didatico">⚠️ ${passo.content}</pre>`;
+            });
+        } else { html = "<pre class='info'>Faça um cálculo para ver os detalhes.</pre>"; }
+        detalhesDiv.innerHTML = html;
+    } else { detalhesDiv.style.display = "none"; }
+}
+
+atualizarDisplay(); 
+</script>
+</body>
+</html>
