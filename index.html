@@ -680,27 +680,33 @@ function gerarExplicacaoDivisao(dividendo, divisor) {
         let sB = String(passo.subtraendo).padStart(sA.length, '0');
         let numA = sA.split('').map(Number);
         let numB = sB.split('').map(Number);
-        let exibicaoA = sA.split('').map(c => `<span style="position:relative; display:inline-block; width:1ch; text-align:center;">${c}</span>`);
+        let cortes = Array(numA.length).fill(false);
+        let emCima = Array(numA.length).fill(' ');
+        let teveCorte = false;
 
         for (let i = numA.length - 1; i >= 0; i--) {
             if (numA[i] < numB[i]) {
+                teveCorte = true;
                 let vizinho = i - 1;
                 while (vizinho >= 0 && numA[vizinho] === 0) {
-                    numA[vizinho] += 9;
-                    exibicaoA[vizinho] = `<span style="position:relative; display:inline-block; width:1ch; text-align:center;"><sup style="position:absolute; right:0.7ch; top:-0.3em; font-size:0.8em; color:var(--accent-color); font-weight:600;">9</sup>${sA[vizinho]}</span>`;
+                    numA[vizinho] = 9; cortes[vizinho] = true; emCima[vizinho] = '9';
                     vizinho--;
                 }
                 if (vizinho >= 0) {
-                    numA[vizinho] -= 1;
-                    numA[i] += 10;
-                    exibicaoA[i] = `<span style="position:relative; display:inline-block; width:1ch; text-align:center;"><sup style="position:absolute; right:0.7ch; top:-0.3em; font-size:0.8em; color:var(--accent-color); font-weight:600;">1</sup>${sA[i]}</span>`;
+                    numA[vizinho] -= 1; cortes[vizinho] = true; emCima[vizinho] = String(numA[vizinho]);
+                    emCima[i] = '1'; numA[i] += 10;
                 }
             }
         }
 
         let startIdx = passo.posFinal - sA.length;
 
-        let minHtml = sp(offsetEsq + startIdx) + exibicaoA.join('');
+        let minHtml = sp(offsetEsq + startIdx);
+        for(let i=0; i<sA.length; i++) {
+            let topVal = emCima[i];
+            let isStrike = cortes[i];
+            minHtml += createCharBlock(sA[i], topVal, isStrike);
+        }
         linhas.push(minHtml);
 
         let subStr = String(passo.subtraendo);
