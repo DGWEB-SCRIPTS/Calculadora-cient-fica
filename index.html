@@ -680,33 +680,27 @@ function gerarExplicacaoDivisao(dividendo, divisor) {
         let sB = String(passo.subtraendo).padStart(sA.length, '0');
         let numA = sA.split('').map(Number);
         let numB = sB.split('').map(Number);
-        let cortes = Array(numA.length).fill(false);
-        let emCima = Array(numA.length).fill(' ');
-        let teveCorte = false;
+        let exibicaoA = sA.split('').map(c => `<span style="position:relative; display:inline-block; width:1ch; text-align:center;">${c}</span>`);
 
         for (let i = numA.length - 1; i >= 0; i--) {
             if (numA[i] < numB[i]) {
-                teveCorte = true;
                 let vizinho = i - 1;
                 while (vizinho >= 0 && numA[vizinho] === 0) {
-                    numA[vizinho] = 9; cortes[vizinho] = true; emCima[vizinho] = '9';
+                    numA[vizinho] += 9;
+                    exibicaoA[vizinho] = `<span style="position:relative; display:inline-block; width:1ch; text-align:center;"><sup style="position:absolute; right:0.7ch; top:-0.3em; font-size:0.8em; color:var(--accent-color); font-weight:600;">9</sup>${sA[vizinho]}</span>`;
                     vizinho--;
                 }
                 if (vizinho >= 0) {
-                    numA[vizinho] -= 1; cortes[vizinho] = true; emCima[vizinho] = String(numA[vizinho]);
-                    emCima[i] = '1'; numA[i] += 10;
+                    numA[vizinho] -= 1;
+                    numA[i] += 10;
+                    exibicaoA[i] = `<span style="position:relative; display:inline-block; width:1ch; text-align:center;"><sup style="position:absolute; right:0.7ch; top:-0.3em; font-size:0.8em; color:var(--accent-color); font-weight:600;">1</sup>${sA[i]}</span>`;
                 }
             }
         }
 
         let startIdx = passo.posFinal - sA.length;
 
-        let minHtml = sp(offsetEsq + startIdx);
-        for(let i=0; i<sA.length; i++) {
-            let topVal = emCima[i];
-            let isStrike = cortes[i];
-            minHtml += createCharBlock(sA[i], topVal, isStrike);
-        }
+        let minHtml = sp(offsetEsq + startIdx) + exibicaoA.join('');
         linhas.push(minHtml);
 
         let subStr = String(passo.subtraendo);
@@ -965,11 +959,15 @@ function evalRPNwithSteps(rpn) {
                     case 'sin': case 'cos': case 'tan':
                         let anguloRad = estado.modeDeg ? a * Math.PI / 180 : a;
                         if (token.value === 'tan' && Math.abs(anguloRad % Math.PI).toFixed(10) === (Math.PI / 2).toFixed(10)) throw new Error("Indefinido");
-                        resultado = Math[token.value](anguloRad); explicacao = gerarExplicacaoTrig(token.value, anguloRad, a, estado.modeDeg); break;
+                        resultado = Math[token.value](anguloRad);
+                        if (Math.abs(resultado) < 1e-14) resultado = 0;
+                        explicacao = gerarExplicacaoTrig(token.value, anguloRad, a, estado.modeDeg, resultado); break;
                     case 'asin': case 'acos': case 'atan':
                         if (['asin', 'acos'].includes(token.value) && (a < -1 || a > 1)) throw new Error("Domínio");
-                        resultado = Math[token.value](a); if (estado.modeDeg) resultado = resultado * 180 / Math.PI;
-                        explicacao = gerarExplicacaoTrig(token.value, a, a, false); break;
+                        resultado = Math[token.value](a);
+                        if (estado.modeDeg) resultado = resultado * 180 / Math.PI;
+                        if (Math.abs(resultado) < 1e-14) resultado = 0;
+                        explicacao = gerarExplicacaoTrig(token.value, a, a, estado.modeDeg, resultado); break;
                 }
                 if (token.value !== 'u-') { resObj.val = resultado; resObj.num = resultado; resObj.den = 1; resObj.isFrac = false; }
                 else { resObj.val = resultado; }
@@ -977,8 +975,9 @@ function evalRPNwithSteps(rpn) {
                 if (pilha.length < 2) throw new Error("Sintaxe inválida");
                 const bObj = pilha.pop(); const aObj = pilha.pop();
                 const b = bObj.val; const a = aObj.val;
+                let isOpFrac = (aObj.isFrac || bObj.isFrac) && ['+', '-', '*', '÷', '/'].includes(token.value);
                 
-                if (token.value === '/') {
+                if (token.value === '/' && !isOpFrac) {
                     if (b === 0) throw new Error("Divisão por zero");
                     resObj.val = a / b;
                     if (Number.isInteger(a) && Number.isInteger(b)) {
@@ -991,11 +990,13 @@ function evalRPNwithSteps(rpn) {
                         explicacao = gerarExplicacaoDivisao(a, b);
                     }
                 } 
-                else if ((aObj.isFrac || bObj.isFrac) && ['+', '-', '*', '÷'].includes(token.value)) {
+                else if (isOpFrac) {
                     let f1 = aObj.isFrac ? aObj : { num: aObj.val, den: 1, isFrac: true };
                     let f2 = bObj.isFrac ? bObj : { num: bObj.val, den: 1, isFrac: true };
+                    let opFrac = token.value === '/' ? '÷' : token.value;
+                    if (opFrac === '÷' && f2.num === 0) throw new Error("Divisão por zero");
                     
-                    let info = gerarExplicacaoFracao(f1, f2, token.value);
+                    let info = gerarExplicacaoFracao(f1, f2, opFrac);
                     explicacao = info;
                     resObj.val = info.resN / info.resD; resObj.num = info.resN; resObj.den = info.resD; resObj.isFrac = true;
                 }
