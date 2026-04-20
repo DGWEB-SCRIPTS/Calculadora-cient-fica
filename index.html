@@ -786,19 +786,16 @@ function gerarExplicacaoFatorial(n) {
     return {passo: `Calculando ${n}!`, isHtml: false, visual: texto};
 }
 
-function gerarExplicacaoTrig(funcao, angulo, anguloOriginal, emDeg) {
-    let texto = `Calculando ${funcao}(${anguloOriginal}${emDeg ? '°' : ' rad'}).\n`;
-    if (emDeg) { texto += `1. Convertendo graus para radianos:\n${anguloOriginal}° × (π / 180) = ${angulo} rad.\n\n`; }
-    let resultado;
-    switch(funcao) {
-        case 'sin': resultado = Math.sin(angulo); break; case 'cos': resultado = Math.cos(angulo); break; case 'tan': resultado = Math.tan(angulo); break;
-        case 'asin': resultado = Math.asin(angulo); break; case 'acos': resultado = Math.acos(angulo); break; case 'atan': resultado = Math.atan(angulo); break;
+function gerarExplicacaoTrig(funcao, anguloRad, anguloOriginal, emDeg, resultadoFinal) {
+    let texto = `Calculando ${funcao}(${anguloOriginal}${emDeg && ['sin', 'cos', 'tan'].includes(funcao) ? '°' : ' rad'}).\n`;
+    if (emDeg && ['sin', 'cos', 'tan'].includes(funcao)) { 
+        texto += `1. Convertendo graus para radianos:\n${anguloOriginal}° × (π / 180) = ${anguloRad} rad.\n\n`; 
     }
     if (emDeg && ['asin', 'acos', 'atan'].includes(funcao)) {
-        texto += `Convertendo resultado para graus:\n${resultado} rad × (180 / π) = ${(resultado * 180 / Math.PI)}°.\n\n`;
-        resultado = resultado * 180 / Math.PI;
+        let resRad = resultadoFinal * Math.PI / 180;
+        texto += `Convertendo resultado para graus:\n${resRad} rad × (180 / π) = ${resultadoFinal}°.\n\n`;
     }
-    texto += `Valor: ${resultado}`;
+    texto += `Valor: ${resultadoFinal}`;
     return {passo: `Calculando ${funcao}(${anguloOriginal})`, isHtml: false, visual: texto};
 }
 
