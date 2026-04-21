@@ -49,7 +49,6 @@
     border: 1px solid rgba(255,255,255,0.05);
   }
   
-  /* --- Controles Superiores --- */
   .topo-controles {
     display: flex;
     justify-content: space-between;
@@ -74,7 +73,6 @@
     color: var(--text-main);
   }
   
-  /* --- Display --- */
   .display {
     background: var(--bg-display);
     padding: 20px;
@@ -99,13 +97,14 @@
     font-weight: 300;
     letter-spacing: -1px;
     min-height: 60px;
-    word-wrap: break-word;
-    word-break: break-all;
+    overflow-x: auto;
+    white-space: nowrap;
     color: #fff;
+    scrollbar-width: none;
   }
+  .display-value::-webkit-scrollbar { display: none; }
   .display-value.erro { color: var(--error-color); font-size: 2rem;}
 
-  /* --- Botão de Alternância (Antigo MT) --- */
   .toggle-modo {
     width: 100%;
     padding: 12px;
@@ -124,7 +123,6 @@
     background: rgba(99, 102, 241, 0.15);
   }
 
-  /* --- Grades de Teclado --- */
   .botoes {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -164,7 +162,6 @@
 
   #btnZero, #btnZeroCientifico { grid-column: 1 / 3; } /* Zero agora ocupa 2 espaços para simetria */
 
-  /* --- Painéis de Detalhes e Histórico --- */
   #historico, #detalhes {
     display: none;
     background: var(--bg-display);
@@ -187,7 +184,6 @@
   #historico div:hover { background-color: var(--btn-bg); }
   #historico div small { display: block; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;}
 
-  /* --- Estilos do Motor Visual HTML (Ajustados para o novo tema) --- */
   #detalhes .math-step {
     background-color: var(--bg-calc);
     padding: 18px;
@@ -237,16 +233,27 @@
   .corte-strike::after { content: ''; position: absolute; left: -2px; top: 50%; width: 120%; height: 2px; background: var(--error-color); transform: rotate(-25deg); }
   .linha-traco { border-bottom: 2px solid var(--text-muted); width: 100%; margin: 8px 0; }
 
-  /* --- Estilo de Frações (Um número em cima do outro) --- */
+  .bloco-termo { display: inline-block; position: relative; }
+  
+  .potencia {
+    font-size: 0.65em;
+    position: relative;
+    top: -0.8em;
+    color: var(--accent-color);
+    font-weight: 600;
+    display: inline-block;
+  }
+
   .fracao {
     display: inline-flex;
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
     vertical-align: middle;
     text-align: center;
+    padding: 0 4px;
   }
-  .fracao > span { padding: 2px 4px; line-height: 1; }
-  .fracao-num { border-bottom: 2px solid currentColor; }
+  .fracao-num { border-bottom: 1.5px solid currentColor; padding: 0 2px; line-height: 1.2; }
+  .fracao-den { padding: 0 2px; line-height: 1.2; }
 
   /* Scrollbar customizada */
   ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -254,7 +261,6 @@
   ::-webkit-scrollbar-thumb { background: var(--btn-hover); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-  /* --- RESPONSIVIDADE (Celulares e Telas Menores) --- */
   @media (max-width: 500px) {
     body {
       padding: 15px 10px;
@@ -285,9 +291,34 @@
       font-size: 1.25rem;
     }
   }
+
+  .ads-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 480px;
+    width: 100%;
+    margin: 20px auto;
+  }
+  .ads-lateral {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 120px;
+    height: 600px;
+    z-index: 0;
+  }
+  .ads-lateral.left { left: 10px; }
+  .ads-lateral.right { right: 10px; }
+  @media (max-width: 900px) {
+    .ads-lateral { display: none; }
+  }
 </style>
 </head>
 <body>
+<div class="ads-lateral left"></div>
+<div class="ads-lateral right"></div>
+
 <div class="calculadora">
   <div class="topo-controles">
     <button class="btn-topo" id="historicoBtn">📜 Histórico</button>
@@ -323,7 +354,7 @@
     <button class="tecla operador" onclick="adicionarInput('+')">+</button>
     
     <button class="tecla" id="btnZero" onclick="adicionarInput('0')">0</button>
-    <button class="tecla" onclick="adicionarInput('.')">.</button>
+    <button class="tecla" onclick="adicionarInput(',')">,</button>
     <button class="tecla igual" id="btnIgual" onclick="calcular()">=</button>
   </div>
 
@@ -340,7 +371,7 @@
     
     <button class="tecla" onclick="adicionarInput('(')">(</button>
     <button class="tecla" onclick="adicionarInput(')')">)</button>
-    <button class="tecla operador" onclick="adicionarInput('√(')">√</button>
+    <button class="tecla operador" onclick="adicionarInput('√')">√</button>
     <button class="tecla operador" onclick="adicionarInput('!')">x!</button>
     
     <button class="tecla operador" onclick="adicionarInput('/')" title="Criar Fração">
@@ -348,10 +379,9 @@
     </button>
     <button class="tecla" onclick="adicionarInput('π')">π</button>
     <button class="tecla" onclick="adicionarInput('e')">e</button>
-    <button class="tecla" onclick="adicionarInput(',')">,</button> 
     
     <button class="tecla" id="btnZeroCientifico" onclick="adicionarInput('0')">0</button>
-    <button class="tecla" onclick="adicionarInput('.')">.</button>
+    <button class="tecla" onclick="adicionarInput(',')">,</button>
     <button class="tecla igual" id="btnIgualCientifico" onclick="calcular()">=</button>
   </div>
 
@@ -360,7 +390,9 @@
 </div>
 
 <!-- BEGIN AADS AD UNIT 2435047 -->
-<div id="frame" style="width: 100%; max-width: 480px; margin: auto; position: relative; z-index: 99998;">
+<div class="ads-stack" id="frame">
+  <iframe data-aa='2435047' src='//acceptable.a-ads.com/2435047/?size=Adaptive'
+          style='border:0; padding:0; width:100%; height:auto; overflow:hidden; display: block; margin: auto; border-radius: 12px;'></iframe>
   <iframe data-aa='2435047' src='//acceptable.a-ads.com/2435047/?size=Adaptive'
           style='border:0; padding:0; width:100%; height:auto; overflow:hidden; display: block; margin: auto; border-radius: 12px;'></iframe>
 </div>
@@ -389,19 +421,67 @@ let ultimosPassos = [];
 let historico = JSON.parse(localStorage.getItem("calcHistorico")) || [];
 let estado = { modeDeg: true, secondState: false };
 
-// =======================================================================
-// === GERADORES DE EXPLICAÇÃO VISUAL DEFINITIVOS (COM HTML INJETADO)  ===
-// =======================================================================
+function fixEpsilon(val) {
+    if (!isFinite(val) || Math.abs(val) > 1e15) return val;
+    return parseFloat(val.toPrecision(14));
+}
 
-const supMap = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹', '-':'⁻', '.':'·'};
-function toSup(str) { return String(str).split('').map(c => supMap[c] || c).join(''); }
+function formatarNumero(n) {
+    if (!isFinite(n)) return String(n);
+    // Previne crash do toFixed em números excessivamente grandes
+    if (Math.abs(n) >= 1e20) return n.toExponential(10).replace('.', ',');
+    return new Intl.NumberFormat('pt-BR', {
+        maximumFractionDigits: 10,
+        minimumFractionDigits: 0
+    }).format(n);
+}
+
+function mdc(a, b) {
+    a = Math.abs(a);
+    b = Math.abs(b);
+    return b === 0 ? a : mdc(b, a % b);
+}
+
+function formatFrac(n, d) {
+    return `<div class="fracao">
+        <span class="fracao-num">${n}</span>
+        <span>${d}</span>
+    </div>`;
+}
+
+function gerarExplicacaoFracao(f1, f2, op) {
+    let n1 = f1.num, d1 = f1.den;
+    let n2 = f2.num, d2 = f2.den;
+    let resN, resD;
+
+    switch(op) {
+        case '+': resN = n1*d2 + n2*d1; resD = d1*d2; break;
+        case '-': resN = n1*d2 - n2*d1; resD = d1*d2; break;
+        case '*': resN = n1*n2; resD = d1*d2; break;
+        case '/': resN = n1*d2; resD = d1*n2; break;
+    }
+
+    let divisor = mdc(resN, resD);
+    resN /= divisor;
+    resD /= divisor;
+
+    return {
+        passo: `Operação com frações`,
+        isHtml: true,
+        visual: `
+        <div style="padding:10px; font-family:'Inter', sans-serif; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.2rem;">
+            ${formatFrac(n1,d1)} ${op} ${formatFrac(n2,d2)} = ${formatFrac(resN,resD)}
+        </div>
+        `,
+        resN, resD
+    };
+}
 
 function createCharBlock(baseChar, supChar = ' ', isStrike = false) {
     let baseStyles = "position:relative; display:inline-block; width:1ch; text-align:center;";
     let supHtml = '';
     if (supChar !== ' ') {
-        let supStr = supMap[supChar] || supChar;
-        supHtml = `<span style="position:absolute; bottom:90%; left:0; right:0; margin:auto; text-align:center; color:var(--accent-color); font-weight:600; font-size:0.85em; line-height:1;">${supStr}</span>`;
+        supHtml = `<span style="position:absolute; bottom:90%; left:0; right:0; margin:auto; text-align:center; color:var(--accent-color); font-weight:600; font-size:0.85em; line-height:1;">${supChar}</span>`;
     }
     let baseSpan = isStrike ? `<span class="corte-strike">${baseChar}</span>` : baseChar;
     return `<span style="${baseStyles}">${supHtml}${baseSpan}</span>`;
@@ -590,7 +670,7 @@ function gerarExplicacaoMultiplicacao(a, b) {
 }
 
 function gerarExplicacaoDivisao(dividendo, divisor) {
-    if (divisor === 0) return {passo: "Erro", isHtml: false, visual: "Divisão por zero!"};
+    if (divisor === 0) return {passo: "Erro", isHtml: false, visual: "Indefinido"};
     
     let html = `<div style="display:flex; justify-content:center; margin-bottom: 15px; font-family:'Inter', sans-serif; align-items: center; gap: 10px;">
         <div class="fracao" style="font-size: 1.5rem; color: var(--accent-color); font-weight: 500;">
@@ -618,8 +698,14 @@ function gerarExplicacaoDivisao(dividendo, divisor) {
     let restosVistos = new Map();
 
     let passosSubtracao = [];
+    
+    let iteracoes = 0;
+    const MAX_ITER = 50;
 
     while (pos < dStr.length || (parseInt(valorAtualStr||"0") !== 0 && qStr.replace('.','').length < maxCasas + 2)) {
+        iteracoes++;
+        if (iteracoes > MAX_ITER) break;
+        
         if (pos < dStr.length) {
             valorAtualStr += dStr[pos];
             pos++;
@@ -749,8 +835,7 @@ function gerarExplicacaoRaizQuadrada(n) {
 }
 
 function gerarExplicacaoPotencia(base, expoente) {
-    let expoenteSup = toSup(expoente);
-    let html = `<div style="font-family:'Inter',sans-serif; color:var(--text-muted); margin-bottom:10px;">Para calcular <strong style="color:var(--accent-color); font-size:1.2em;">${base}${expoenteSup}</strong>, multiplicamos ${base} por si mesmo, ${expoente} vezes.</div>`;
+    let html = `<div style="font-family:'Inter',sans-serif; color:var(--text-muted); margin-bottom:10px;">Para calcular <strong style="color:var(--accent-color); font-size:1.2em;">${base}<span style="vertical-align: super; font-size: 0.7em;">${expoente}</span></strong>, multiplicamos ${base} por si mesmo, ${expoente} vezes.</div>`;
     if (expoente > 1 && expoente <= 10 && Number.isInteger(expoente)) {
         let calcTemp = base;
         for (let i = 1; i < expoente; i++) {
@@ -761,11 +846,11 @@ function gerarExplicacaoPotencia(base, expoente) {
     } else { 
         html += `<div style="margin-top:15px; color:var(--text-main); font-family:'Inter',sans-serif;">Cálculo direto.<br>Valor da potência: ${Math.pow(base, expoente)}</div>`; 
     }
-    return { passo: `Calculando ${base}${expoenteSup}`, isHtml: true, visual: html };
+    return { passo: `Calculando potência`, isHtml: true, visual: html };
 }
 
 function gerarExplicacaoFatorial(n) {
-    if (n < 0 || !Number.isInteger(n)) return {passo: "Erro", isHtml: false, visual: "Fatorial só se aplica a inteiros não-negativos."};
+    if (n < 0 || !Number.isInteger(n)) return {passo: "Erro", isHtml: false, visual: "Erro de Domínio (Fatorial só se aplica a inteiros positivos)."};
     if (n > 170) return {passo: "Erro", isHtml: false, visual: "Número muito grande para fatorial (limite: 170)."};
     if (n === 0 || n === 1) return {passo: `Calculando ${n}!`, isHtml: false, visual: `${n}! = 1`};
     let texto = `${n}! = ${n}`;
@@ -806,35 +891,108 @@ function gerarExplicacaoLog(funcao, n) {
     return {passo: `Calculando ${funcao}(${n})`, isHtml: false, visual: texto};
 }
 
-// =======================================================================
-// === FUNÇÕES DE UI E ESTADO ============================================
-// =======================================================================
-
 function escapeHTML(str) {
     return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
 function formatarParaDisplay(expr) {
     if (!expr) return "";
-    let html = expr;
-    html = html.replace(/(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)/g, '<span class="fracao" style="vertical-align: middle; margin: 0 2px; font-size: 0.9em; display: inline-flex;"><span class="fracao-num">$1</span><span>$2</span></span>');
-    html = html.replace(/(\d+(?:\.\d+)?)\/(?!\d)/g, '<span class="fracao" style="vertical-align: middle; margin: 0 2px; font-size: 0.9em; display: inline-flex;"><span class="fracao-num">$1</span><span>&nbsp;</span></span>');
-    html = html.replace(/\^(\d+(?:\.\d+)?)/g, (match, p1) => `<span style="color:var(--accent-color); font-weight:600;">${toSup(p1)}</span>`);
-    return html;
+    
+    let text = expr.replace(/\d+(?:,\d+)?/g, match => {
+        let parts = match.split(',');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return parts.join(',');
+    });
+
+    let placeholders = [];
+    function extractParens(str) {
+        let prev;
+        do {
+            prev = str;
+            str = str.replace(/\(([^()]+)\)/g, (match, inner) => {
+                placeholders.push(`(${inner})`);
+                return `\x01${placeholders.length - 1}\x02`;
+            });
+        } while (str !== prev);
+        return str;
+    }
+    
+    let safeStr = extractParens(text);
+    let htmlPlaceholders = [];
+    
+    // Agora o TokenPattern não captura HTML quebrado, ele captura blocos validados (Placeholders 3 e 4)
+    const tokenPattern = `(?:[a-zA-Z]*\\x01\\d+\\x02|[\\d.,]+|\\x03\\d+\\x04)`;
+
+    const powerRegex = new RegExp(`(${tokenPattern})\\^(${tokenPattern})`, 'g');
+    let prevSafe;
+    do {
+        prevSafe = safeStr;
+        safeStr = safeStr.replace(powerRegex, (match, p1, p2) => {
+            htmlPlaceholders.push(`<span class="bloco-termo">${p1}<span class="potencia">${p2}</span></span>`);
+            return `\x03${htmlPlaceholders.length - 1}\x04`;
+        });
+    } while (safeStr !== prevSafe);
+
+    const fracRegex = new RegExp(`(${tokenPattern})\\/(${tokenPattern})`, 'g');
+    do {
+        prevSafe = safeStr;
+        safeStr = safeStr.replace(fracRegex, (match, p1, p2) => {
+            htmlPlaceholders.push(`<span class="fracao"><span class="fracao-num">${p1}</span><span class="fracao-den">${p2}</span></span>`);
+            return `\x03${htmlPlaceholders.length - 1}\x04`;
+        });
+    } while (safeStr !== prevSafe);
+    
+    const fracIncRegex = new RegExp(`(${tokenPattern})\\/(?!\\d|\\x01|\\x03|[a-zA-Z])`, 'g');
+    safeStr = safeStr.replace(fracIncRegex, (match, p1) => {
+        htmlPlaceholders.push(`<span class="fracao"><span class="fracao-num">${p1}</span><span class="fracao-den">&nbsp;</span></span>`);
+        return `\x03${htmlPlaceholders.length - 1}\x04`;
+    });
+
+    let prevHtml;
+    do {
+        prevHtml = safeStr;
+        safeStr = safeStr.replace(/\x03(\d+)\x04/g, (match, id) => htmlPlaceholders[id]);
+    } while (safeStr !== prevHtml);
+
+    let prev;
+    do {
+        prev = safeStr;
+        safeStr = safeStr.replace(/\x01(\d+)\x02/g, (match, id) => placeholders[id]);
+    } while (safeStr !== prev);
+
+    return safeStr;
 }
 
 function atualizarDisplay() { displayExpr.innerHTML = formatarParaDisplay(expressao); displayValue.textContent = "0"; displayValue.classList.remove("erro"); }
 function limparTudo() { expressao = ""; expressaoParaCalculo = ""; ultimosPassos = []; detalhesDiv.style.display = "none"; displayExpr.innerHTML = ""; displayValue.textContent = "0"; displayValue.classList.remove("erro"); }
 function apagarUltimo() {
-    if (expressao.endsWith('(')) expressao = expressao.replace(/(sin|cos|tan|asin|acos|atan|lg|ln|√)\($/i, "");
+    const funcRegex = /(sin|cos|tan|asin|acos|atan|lg|ln|√)\($/i;
+    if (funcRegex.test(expressao)) expressao = expressao.replace(funcRegex, "");
     else expressao = expressao.slice(0, -1);
     displayExpr.innerHTML = formatarParaDisplay(expressao);
 }
 function adicionarInput(valor) {
+    if (expressao.length > 100) return; // Limita tamanho da expressão
     const ultimoChar = expressao.slice(-1); const operadores = "+−×÷^/";
-    if (valor === '.' && ultimoChar === '.') return;
-    if (operadores.includes(valor) && operadores.includes(ultimoChar)) expressao = expressao.slice(0, -1) + valor;
-    else expressao += valor;
+    if (valor === ',') {
+        const partes = expressao.split(/[\+\−\×\÷\^\(\)\/]/);
+        if (partes[partes.length - 1].includes(',')) return;
+    }
+    if (operadores.includes(valor)) {
+        if (operadores.includes(ultimoChar)) {
+            if (valor === '−' && ultimoChar !== '−' && ultimoChar !== '+') {
+                expressao += valor;
+            } else {
+                expressao = expressao.slice(0, -1) + valor;
+            }
+        } else if (ultimoChar === '(' && valor !== '−') {
+            return; // Bloqueia operadores imediatamente após abrir parenteses (ex: (* ou (/)
+        } else {
+            expressao += valor;
+        }
+    } else {
+        expressao += valor;
+    }
     displayExpr.innerHTML = formatarParaDisplay(expressao);
 }
 function alternarTeclados() {
@@ -863,22 +1021,19 @@ function toggleSecond() {
     }
 }
 
-// =======================================================================
-// === MOTOR DE CÁLCULO (RPN / SHUNTING-YARD) ============================
-// =======================================================================
-const precedencia = { '+': 1, '−': 1, '×': 2, '÷': 2, '/': 2, '^': 3, '√': 4, 'u-': 4, '!': 4, '%': 4 };
-const associatividade = { '^': 'direita', '+': 'esquerda', '−': 'esquerda', '×': 'esquerda', '÷': 'esquerda', '/': 'esquerda', 'u-': 'direita', '!': 'esquerda', '%': 'esquerda', '√': 'direita' };
+const precedencia = { '+': 1, '-': 1, '*': 2, '/': 2, 'u-': 3, '^': 4, 'sqrt': 5, '!': 5, '%': 5 };
+const associatividade = { '^': 'direita', '+': 'esquerda', '-': 'esquerda', '*': 'esquerda', '/': 'esquerda', 'u-': 'direita', '!': 'esquerda', '%': 'esquerda', 'sqrt': 'direita' };
 const constantes = { 'pi': Math.PI, 'e': Math.E };
 
 function tokenize(expr) {
-    let calcExpr = expr.replace(/×/g, '*').replace(/−/g, '-').replace(/π/g, 'pi').replace(/√/g, 'sqrt');
+    let calcExpr = expr.replace(/\./g, '').replace(/,/g, '.').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/π/g, 'pi').replace(/√/g, 'sqrt');
     
     // Injeta multiplicações implícitas para constantes e parênteses (ex: 2pi -> 2*pi, 2(3) -> 2*(3))
     calcExpr = calcExpr.replace(/(\d)(pi|e|sin|cos|tan|asin|acos|atan|lg|ln|sqrt|\()/ig, '$1*$2');
     calcExpr = calcExpr.replace(/(\))(pi|e|sin|cos|tan|asin|acos|atan|lg|ln|sqrt|\(|\d)/ig, '$1*$2');
     calcExpr = calcExpr.replace(/(pi|e)(\d|\()/ig, '$1*$2');
 
-    const tokens = []; const regex = /(\d+\.?\d*|\.\d+)|(pi|e|sin|cos|tan|asin|acos|atan|lg|ln|sqrt)|([+\-*÷/^()!,%])/ig;
+    const tokens = []; const regex = /(\d+\.?\d*|\.\d+)|(pi|e|sin|cos|tan|asin|acos|atan|lg|ln|sqrt)|([+\-*\/^()!,%])/ig;
     let match; let ultimoTokenTipo = null;
     while ((match = regex.exec(calcExpr)) !== null) {
         const token = match[0];
@@ -947,50 +1102,64 @@ function evalRPNwithSteps(rpn) {
                 let resultado;
                 switch(token.value) {
                     case 'u-': 
-                        resultado = -a; 
+                        resultado = fixEpsilon(-a); 
                         if(aObj.isFrac) {
                             resObj.isFrac = true; resObj.num = -aObj.num; resObj.den = aObj.den;
                             explicacao = {passo: `Invertendo sinal da fração`, isHtml: true, visual: `<div style="padding:10px;">Fica: ${formatFrac(resObj.num, resObj.den)}</div>`}; 
                         } else { explicacao = {passo: `Invertendo sinal`, isHtml: false, visual: `Oposto de ${a}: ${-a}`}; }
                         break;
                     case '!':
-                        if (a < 0 || !Number.isInteger(a)) throw new Error("Fatorial inválido");
-                        if (a > 170) throw new Error("Overflow");
+                        if (a < 0 || !Number.isInteger(a)) throw new Error("Erro de Domínio (Fatorial)");
+                        if (a > 170) throw new Error("Número muito grande");
                         resultado = 1; for (let i = 2; i <= a; i++) resultado *= i;
                         explicacao = gerarExplicacaoFatorial(a); break;
-                    case '%': resultado = a / 100; explicacao = gerarExplicacaoPorcentagem(a); break;
-                    case 'sqrt': if (a < 0) throw new Error("Domínio"); resultado = Math.sqrt(a); explicacao = gerarExplicacaoRaizQuadrada(a); break;
-                    case 'ln': if (a <= 0) throw new Error("Domínio"); resultado = Math.log(a); explicacao = gerarExplicacaoLog('ln', a); break;
-                    case 'lg': if (a <= 0) throw new Error("Domínio"); resultado = Math.log10(a); explicacao = gerarExplicacaoLog('lg', a); break;
+                    case '%': resultado = fixEpsilon(a / 100); explicacao = gerarExplicacaoPorcentagem(a); break;
+                    case 'sqrt': if (a < 0) throw new Error("Erro de Domínio"); resultado = fixEpsilon(Math.sqrt(a)); explicacao = gerarExplicacaoRaizQuadrada(a); break;
+                    case 'ln': if (a <= 0) throw new Error("Erro de Domínio"); resultado = Math.log(a); explicacao = gerarExplicacaoLog('ln', a); break;
+                    case 'lg': if (a <= 0) throw new Error("Erro de Domínio"); resultado = Math.log10(a); explicacao = gerarExplicacaoLog('lg', a); break;
                     case 'sin': case 'cos': case 'tan':
                         let anguloRad = estado.modeDeg ? a * Math.PI / 180 : a;
-                        if (token.value === 'tan' && Math.abs(anguloRad % Math.PI).toFixed(10) === (Math.PI / 2).toFixed(10)) throw new Error("Indefinido");
-                        resultado = Math[token.value](anguloRad);
+                        if (token.value === 'tan' && Math.abs(Math.cos(anguloRad)) < 1e-12) throw new Error("Indefinido");
+                        resultado = fixEpsilon(Mathtoken.value);
                         if (Math.abs(resultado) < 1e-14) resultado = 0;
                         explicacao = gerarExplicacaoTrig(token.value, anguloRad, a, estado.modeDeg, resultado); break;
                     case 'asin': case 'acos': case 'atan':
-                        if (['asin', 'acos'].includes(token.value) && (a < -1 || a > 1)) throw new Error("Domínio");
-                        resultado = Math[token.value](a);
+                        if (['asin', 'acos'].includes(token.value) && (a < -1 || a > 1)) throw new Error("Erro de Domínio");
+                        resultado = fixEpsilon(Mathtoken.value);
                         if (estado.modeDeg) resultado = resultado * 180 / Math.PI;
                         if (Math.abs(resultado) < 1e-14) resultado = 0;
                         explicacao = gerarExplicacaoTrig(token.value, a, a, estado.modeDeg, resultado); break;
                 }
                 if (token.value !== 'u-') { resObj.val = resultado; resObj.num = resultado; resObj.den = 1; resObj.isFrac = false; }
                 else { resObj.val = resultado; }
+                
+                if (token.value === '%') resObj.isPercent = true;
             } else {
                 if (pilha.length < 2) throw new Error("Sintaxe inválida");
                 const bObj = pilha.pop(); const aObj = pilha.pop();
-                const b = bObj.val; const a = aObj.val;
-                let isOpFrac = (aObj.isFrac || bObj.isFrac) && ['+', '-', '*', '÷', '/'].includes(token.value);
+                let b = bObj.val; const a = aObj.val;
+                
+                // Trata a adição de porcentagem: 50 + 10% -> 55
+                if ((token.value === '+' || token.value === '-') && bObj.isPercent) {
+                    b = a * b; // 'b' se torna a porcentagem baseada em 'a'
+                }
+                
+                let isOpFrac = (aObj.isFrac || bObj.isFrac) && ['+', '-', '*', '/'].includes(token.value);
                 
                 if (token.value === '/' && !isOpFrac) {
-                    if (b === 0) throw new Error("Divisão por zero");
-                    resObj.val = a / b;
+                    if (b === 0) throw new Error("Indefinido");
+                    resObj.val = fixEpsilon(a / b);
                     if (Number.isInteger(a) && Number.isInteger(b)) {
                         let div = mdc(a, b);
-                        resObj.num = a / div; resObj.den = b / div; resObj.isFrac = true;
+                        resObj.num = a / div; resObj.den = b / div; 
                         if (resObj.den < 0) { resObj.num *= -1; resObj.den *= -1; }
-                        explicacao = { passo: `Montando Fração`, isHtml: true, visual: `<div style="padding:10px;">Fração interpretada: ${formatFrac(resObj.num, resObj.den)}</div>` };
+                        if (resObj.den === 1) {
+                            resObj.isFrac = false; // Divisão exata, sem fração
+                            explicacao = gerarExplicacaoDivisao(a, b);
+                        } else {
+                            resObj.isFrac = true;
+                            explicacao = { passo: `Montando Fração`, isHtml: true, visual: `<div style="padding:10px; font-family:'Inter', sans-serif;">Fração interpretada: ${formatFrac(resObj.num, resObj.den)}</div>` };
+                        }
                     } else {
                         resObj.num = resObj.val; resObj.isFrac = false;
                         explicacao = gerarExplicacaoDivisao(a, b);
@@ -998,21 +1167,22 @@ function evalRPNwithSteps(rpn) {
                 } 
                 else if (isOpFrac) {
                     let f1 = aObj.isFrac ? aObj : { num: aObj.val, den: 1, isFrac: true };
-                    let f2 = bObj.isFrac ? bObj : { num: bObj.val, den: 1, isFrac: true };
-                    let opFrac = token.value === '/' ? '÷' : token.value;
-                    if (opFrac === '÷' && f2.num === 0) throw new Error("Divisão por zero");
+                    let f2 = bObj.isFrac ? bObj : { num: b, den: 1, isFrac: true }; // Usamos o "b" tratado no caso da porcentagem
+                    let opFrac = token.value;
+                    if (opFrac === '/' && f2.num === 0) throw new Error("Indefinido");
                     
                     let info = gerarExplicacaoFracao(f1, f2, opFrac);
                     explicacao = info;
-                    resObj.val = info.resN / info.resD; resObj.num = info.resN; resObj.den = info.resD; resObj.isFrac = true;
+                    resObj.val = fixEpsilon(info.resN / info.resD); resObj.num = info.resN; resObj.den = info.resD; resObj.isFrac = true;
+                    if (resObj.den === 1) resObj.isFrac = false;
                 }
                 else {
                     switch(token.value) {
-                        case '+': resObj.val = a + b; explicacao = gerarExplicacaoSoma(a, b); break;
-                        case '-': resObj.val = a - b; explicacao = gerarExplicacaoSubtracao(a, b); break;
-                        case '*': resObj.val = a * b; explicacao = gerarExplicacaoMultiplicacao(a, b); break;
-                        case '÷': if (b === 0) throw new Error("Divisão por zero"); resObj.val = a / b; explicacao = gerarExplicacaoDivisao(a, b); break;
-                        case '^': resObj.val = Math.pow(a, b); explicacao = gerarExplicacaoPotencia(a, b); break;
+                        case '+': resObj.val = fixEpsilon(a + b); explicacao = gerarExplicacaoSoma(a, b); break;
+                        case '-': resObj.val = fixEpsilon(a - b); explicacao = gerarExplicacaoSubtracao(a, b); break;
+                        case '*': resObj.val = fixEpsilon(a * b); explicacao = gerarExplicacaoMultiplicacao(a, b); break;
+                        case '/': if (b === 0) throw new Error("Indefinido"); resObj.val = fixEpsilon(a / b); explicacao = gerarExplicacaoDivisao(a, b); break;
+                        case '^': resObj.val = fixEpsilon(Math.pow(a, b)); explicacao = gerarExplicacaoPotencia(a, b); break;
                     }
                     resObj.num = resObj.val; resObj.isFrac = false;
                 }
@@ -1025,9 +1195,9 @@ function evalRPNwithSteps(rpn) {
     });
     if (pilha.length !== 1) throw new Error("Malformada.");
     const resultadoFinal = pilha[0];
-    if (!isFinite(resultadoFinal.val)) throw new Error("Overflow");
+    if (!isFinite(resultadoFinal.val)) throw new Error("Número muito grande");
     
-    let valStr = parseFloat(resultadoFinal.val.toPrecision(12)).toString();
+    let valStr = formatarNumero(resultadoFinal.val);
     let msgFinal = `Resultado Final: ${valStr}`;
     if (resultadoFinal.isFrac && resultadoFinal.den !== 1) {
         msgFinal = `<div style="display:flex; align-items:center; justify-content:center; gap: 10px;">Resultado Final: ${formatFrac(resultadoFinal.num, resultadoFinal.den)} <span style="font-family:'Inter',sans-serif; font-size:1.1rem; color:var(--text-muted);">≈ ${valStr}</span></div>`;
@@ -1038,7 +1208,12 @@ function evalRPNwithSteps(rpn) {
     return { result: resultadoFinal.val, logs: logs };
 }
 
+let calcLock = false;
 function calcular() {
+    if (calcLock) return;
+    calcLock = true;
+    setTimeout(() => calcLock = false, 300); // Anti-spam do botão '='
+
     // Guarda se o painel já estava aberto antes de resetar
     let estavaAberto = detalhesDiv.style.display === "block";
     
@@ -1046,6 +1221,20 @@ function calcular() {
     if (!expressao) { displayValue.textContent = "0"; return; }
     
     let exprParaCalc = expressao;
+
+    if (/!{2,}/.test(exprParaCalc)) {
+        displayValue.textContent = "Erro"; displayValue.classList.add("erro");
+        ultimosPassos.push({ type: 'error', content: "Fatorial duplicado inválido" });
+        if (estavaAberto) mostrarDetalhes(); 
+        return;
+    }
+
+    if (/^\(\s*\)$/.test(exprParaCalc)) {
+        displayValue.textContent = "Erro"; displayValue.classList.add("erro");
+        ultimosPassos.push({ type: 'error', content: "Expressão vazia" });
+        if (estavaAberto) mostrarDetalhes(); 
+        return;
+    }
     
     if (/[+\-×÷^/]$/.test(exprParaCalc)) {
         displayValue.textContent = "Erro"; displayValue.classList.add("erro");
@@ -1068,7 +1257,7 @@ function calcular() {
         ultimosPassos.push({ type: 'intro', content: `Analisando: ${escapeHTML(exprParaCalc)}` });
         const { result, logs } = evalRPNwithSteps(rpn);
         ultimosPassos = ultimosPassos.concat(logs);
-        let resultadoFormatado = Number(result.toPrecision(13)).toString().replace('.', ',');
+        let resultadoFormatado = formatarNumero(result);
         displayValue.textContent = resultadoFormatado; displayValue.classList.remove("erro");
         salvarHistorico(expressao, resultadoFormatado, ultimosPassos);
     } catch (error) {
@@ -1079,10 +1268,6 @@ function calcular() {
     // Só reabre automaticamente se já estivesse aberto antes
     if (estavaAberto) mostrarDetalhes();
 }
-
-// =======================================================================
-// === HISTÓRICO E DETALHES (UI HANDLERS) ================================
-// =======================================================================
 
 function salvarHistorico(expr, res, passos) {
     historico.unshift({ id: Date.now(), expressao: expr, resultado: res, passos: passos });
@@ -1097,7 +1282,7 @@ historicoBtn.addEventListener("click", () => {
         if (historico.length) {
             historico.forEach(reg => {
                 const itemDiv = document.createElement("div");
-                itemDiv.innerHTML = `<small>${reg.expressao}</small> = ${reg.resultado}`;
+                itemDiv.innerHTML = `<small>${escapeHTML(reg.expressao)}</small> = ${escapeHTML(String(reg.resultado))}`;
                 itemDiv.onclick = () => carregarDoHistorico(reg.id);
                 historicoDiv.appendChild(itemDiv);
             });
@@ -1134,6 +1319,37 @@ function mostrarDetalhes() {
 }
 
 atualizarDisplay(); 
+
+document.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (navigator.vibrate) navigator.vibrate(40); // Feedback táctil leve
+    });
+});
+
+document.addEventListener('keydown', (e) => {
+    const key = e.key;
+    if (/[0-9\,\.\+\-\*\/\(\)\%\^!]/.test(key)) {
+        e.preventDefault();
+        let val = key;
+        if (val === '.') val = ','; // Converte ponto do teclado numérico para vírgula
+        if (val === '*') val = '×';
+        if (val === '/') val = '÷';
+        if (val === '-') val = '−';
+        adicionarInput(val);
+    } else if (key === 'Enter' || key === '=') { e.preventDefault(); calcular(); } 
+    else if (key === 'Backspace') { e.preventDefault(); apagarUltimo(); } 
+    else if (key === 'Escape') { e.preventDefault(); limparTudo(); }
+});
+
+let touchStartX = 0;
+const displayEl = document.querySelector('.display');
+displayEl.addEventListener('touchstart', e => touchStartX = e.changedTouches[0].screenX, {passive: true});
+displayEl.addEventListener('touchend', e => {
+    if (e.changedTouches[0].screenX < touchStartX - 40) { // Swipe pra esquerda
+        apagarUltimo();
+        if (navigator.vibrate) navigator.vibrate(40);
+    }
+}, {passive: true});
 </script>
 </body>
 </html>
