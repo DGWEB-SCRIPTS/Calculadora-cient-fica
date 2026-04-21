@@ -525,7 +525,7 @@ function gerarExplicacaoFracao(f1, f2, op) {
         case '+': resN = n1*d2 + n2*d1; resD = d1*d2; break;
         case '-': resN = n1*d2 - n2*d1; resD = d1*d2; break;
         case '*': resN = n1*n2; resD = d1*d2; break;
-        case '/': resN = n1*d2; resD = d1*n2; break;
+        case '/': case '÷': resN = n1*d2; resD = d1*n2; break;
     }
 
     let divisor = mdc(resN, resD);
@@ -537,7 +537,7 @@ function gerarExplicacaoFracao(f1, f2, op) {
         isHtml: true,
         visual: `
         <div style="padding:10px; font-family:'Inter', sans-serif; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.2rem;">
-            ${formatFrac(n1,d1)} ${op} ${formatFrac(n2,d2)} = ${formatFrac(resN,resD)}
+            ${formatFrac(n1,d1)} ${op === '/' ? '÷' : op} ${formatFrac(n2,d2)} = ${formatFrac(resN,resD)}
         </div>
         `,
         resN, resD
@@ -556,7 +556,7 @@ function createCharBlock(baseChar, supChar = ' ', isStrike = false) {
 
 function gerarExplicacaoSoma(a, b) {
     // Prevenção de loop excessivo de strings e quebra por notação científica
-    if (!isFinite(a) || !isFinite(b) || Math.abs(a) > 1e14 || Math.abs(b) > 1e14 || String(a).includes('e') || String(b).includes('e')) {
+    if (!isFinite(a) || !isFinite(b) || String(a).includes('e') || String(b).includes('e')) {
         return {passo: `Calculando ${a} + ${b}`, isHtml: false, visual: `Soma direta:\n${a} + ${b} = ${a+b}`};
     }
 
@@ -612,7 +612,7 @@ function gerarExplicacaoSoma(a, b) {
 }
 
 function gerarExplicacaoSubtracao(a, b) {
-    if (!isFinite(a) || !isFinite(b) || Math.abs(a) > 1e14 || Math.abs(b) > 1e14 || String(a).includes('e') || String(b).includes('e')) {
+    if (!isFinite(a) || !isFinite(b) || String(a).includes('e') || String(b).includes('e')) {
         return {passo: `Calculando ${a} - ${b}`, isHtml: false, visual: `Subtração direta:\n${a} - ${b} = ${a-b}`};
     }
 
@@ -672,9 +672,8 @@ function gerarExplicacaoSubtracao(a, b) {
 
     return {passo: `Calculando ${negativo ? b : a} - ${negativo ? a : b}`, isHtml: true, visual: html};
 }
-
 function gerarExplicacaoMultiplicacao(a, b) {
-    if (!isFinite(a) || !isFinite(b) || Math.abs(a) > 1e14 || Math.abs(b) > 1e14) {
+    if (!isFinite(a) || !isFinite(b) || String(a).includes('e') || String(b).includes('e')) {
         return {passo: `Calculando ${a} × ${b}`, isHtml: false, visual: `Multiplicação direta:\n${a} × ${b} = ${a*b}`};
     }
 
@@ -752,7 +751,7 @@ function gerarExplicacaoMultiplicacao(a, b) {
 function gerarExplicacaoDivisao(dividendo, divisor) {
     if (divisor === 0) return {passo: "Erro", isHtml: false, visual: "Divisão por zero inválida"};
     
-    if (!isFinite(dividendo) || !isFinite(divisor) || Math.abs(dividendo) > 1e14 || Math.abs(divisor) > 1e14 || String(dividendo).includes('e') || String(divisor).includes('e')) {
+    if (!isFinite(dividendo) || !isFinite(divisor) || String(dividendo).includes('e') || String(divisor).includes('e')) {
         return {passo: `Calculando ${dividendo} ÷ ${divisor}`, isHtml: false, visual: `Divisão direta:\n${dividendo} ÷ ${divisor} = ${dividendo/divisor}`};
     }
     
@@ -780,11 +779,10 @@ function gerarExplicacaoDivisao(dividendo, divisor) {
     let pos = 0;
     let decimalAdicionado = false;
     let restosVistos = new Map();
-
     let passosSubtracao = [];
     
     let iteracoes = 0;
-    const MAX_ITER = 50;
+    const MAX_ITER = 150;
 
     while (pos < dStr.length || (parseInt(valorAtualStr||"0") !== 0 && qStr.replace('.','').length < maxCasas + 2)) {
         iteracoes++;
@@ -1151,19 +1149,19 @@ function toggleSecond() {
     }
 }
 
-const precedencia = { '+': 1, '-': 1, '*': 2, '/': 2, 'u-': 3, '^': 4, 'sqrt': 5, '!': 5, '%': 5 };
-const associatividade = { '^': 'direita', '+': 'esquerda', '-': 'esquerda', '*': 'esquerda', '/': 'esquerda', 'u-': 'direita', '!': 'esquerda', '%': 'esquerda', 'sqrt': 'direita' };
+const precedencia = { '+': 1, '-': 1, '*': 2, '/': 2, '÷': 2, 'u-': 3, '^': 4, 'sqrt': 5, '!': 5, '%': 5 };
+const associatividade = { '^': 'direita', '+': 'esquerda', '-': 'esquerda', '*': 'esquerda', '/': 'esquerda', '÷': 'esquerda', 'u-': 'direita', '!': 'esquerda', '%': 'esquerda', 'sqrt': 'direita' };
 const constantes = { 'pi': Math.PI, 'e': Math.E };
 
 function tokenize(expr) {
-    let calcExpr = expr.replace(/\./g, '').replace(/,/g, '.').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/π/g, 'pi').replace(/√/g, 'sqrt');
+    let calcExpr = expr.replace(/\./g, '').replace(/,/g, '.').replace(/×/g, '*').replace(/−/g, '-').replace(/π/g, 'pi').replace(/√/g, 'sqrt');
     
     calcExpr = calcExpr.replace(/(\d)(x|pi|e|sin|cos|tan|asin|acos|atan|lg|ln|sqrt|\()/ig, '$1*$2');
     calcExpr = calcExpr.replace(/(\))(x|pi|e|sin|cos|tan|asin|acos|atan|lg|ln|sqrt|\(|\d)/ig, '$1*$2');
     calcExpr = calcExpr.replace(/(x|pi|e)(\d|\()/ig, '$1*$2');
 
     const tokens = []; 
-    const regex = /(\d+\.?\d*|\.\d+)|(pi|e|sin|cos|tan|asin|acos|atan|lg|ln|sqrt)|([xX])|([+\-*\/^()!,%])/ig;
+    const regex = /(\d+\.?\d*|\.\d+)|(pi|e|sin|cos|tan|asin|acos|atan|lg|ln|sqrt)|([xX])|([+\-*\/÷^()!,%])/ig;
     let match; 
     let ultimoTokenTipo = null;
     
@@ -1295,12 +1293,12 @@ function evalRPNwithSteps(rpn) {
                     b = a * b; // 'b' se torna a porcentagem baseada em 'a'
                 }
                 
-                let isOpFrac = (aObj.isFrac || bObj.isFrac) && ['+', '-', '*', '/'].includes(token.value);
+                let isOpFrac = (aObj.isFrac || bObj.isFrac) && ['+', '-', '*', '/', '÷'].includes(token.value);
                 
-                if (token.value === '/' && !isOpFrac) {
+                if ((token.value === '/' || token.value === '÷') && !isOpFrac) {
                     if (b === 0) throw new Error("Divisão por zero");
                     resObj.val = fixEpsilon(a / b);
-                    if (Number.isInteger(a) && Number.isInteger(b)) {
+                    if (token.value === '/' && Number.isInteger(a) && Number.isInteger(b)) {
                         let div = mdc(a, b);
                         resObj.num = a / div; resObj.den = b / div; 
                         if (resObj.den < 0) { resObj.num *= -1; resObj.den *= -1; }
@@ -1320,7 +1318,7 @@ function evalRPNwithSteps(rpn) {
                     let f1 = aObj.isFrac ? aObj : { num: aObj.val, den: 1, isFrac: true };
                     let f2 = bObj.isFrac ? bObj : { num: b, den: 1, isFrac: true }; // Usamos o "b" tratado no caso da porcentagem
                     let opFrac = token.value;
-                    if (opFrac === '/' && f2.num === 0) throw new Error("Divisão por zero");
+                    if ((opFrac === '/' || opFrac === '÷') && f2.num === 0) throw new Error("Divisão por zero");
                     
                     let info = gerarExplicacaoFracao(f1, f2, opFrac);
                     explicacao = info;
@@ -1332,7 +1330,7 @@ function evalRPNwithSteps(rpn) {
                         case '+': resObj.val = fixEpsilon(a + b); explicacao = gerarExplicacaoSoma(a, b); break;
                         case '-': resObj.val = fixEpsilon(a - b); explicacao = gerarExplicacaoSubtracao(a, b); break;
                         case '*': resObj.val = fixEpsilon(a * b); explicacao = gerarExplicacaoMultiplicacao(a, b); break;
-                        case '/': if (b === 0) throw new Error("Divisão por zero"); resObj.val = fixEpsilon(a / b); explicacao = gerarExplicacaoDivisao(a, b); break;
+                        case '/': case '÷': if (b === 0) throw new Error("Divisão por zero"); resObj.val = fixEpsilon(a / b); explicacao = gerarExplicacaoDivisao(a, b); break;
                         case '^': resObj.val = fixEpsilon(Math.pow(a, b)); explicacao = gerarExplicacaoPotencia(a, b); break;
                     }
                     resObj.num = resObj.val; resObj.isFrac = false;
