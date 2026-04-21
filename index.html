@@ -982,7 +982,17 @@ function escapeHTML(str) {
 function formatarParaDisplay(expr) {
     if (!expr) return "";
     
-    let text = expr.replace(/\d+(,\d+)?/g, match => {
+    let text = String(expr);
+    
+    // Remove asteriscos de multiplicações implícitas para o visual (ex: 6*x -> 6x)
+    text = text.replace(/(\d)\*([a-zA-ZΔθλμΩ\(])/g, '$1$2');
+    text = text.replace(/([a-zA-ZΔθλμΩ])\*\(/g, '$1(');
+    text = text.replace(/\)\*([a-zA-ZΔθλμΩ\d\(])/g, ')$1');
+    
+    // Converte os operadores de sistema para os visuais matemáticos
+    text = text.replace(/\*/g, '×').replace(/-/g, '−');
+    
+    text = text.replace(/\d+(,\d+)?/g, match => {
         let parts = match.split(',');
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         return parts.join(',');
