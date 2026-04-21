@@ -1604,8 +1604,8 @@ function resolverEquacaoQuadratica(expr, exprOriginal = null) {
     let aStr = a < 0 ? `(${a})` : `${a}`;
     let cStr = c < 0 ? `(${c})` : `${c}`;
 
-    passos.push({ type: 'intro', content: 'Passo 3: Calcular o discriminante (Δ) usando a fórmula: Δ = b² - 4ac.' });
-    passos.push({ type: 'html', content: `<div class="conta-visual">${formatarParaDisplay(`Δ = ${bStr}^2 - 4*${aStr}*${cStr}`)}</div>` });
+    passos.push({ type: 'intro', content: 'Passo 3: Calcular o discriminante (Δ) usando a fórmula: Δ = b² − 4ac.' });
+    passos.push({ type: 'html', content: `<div class="conta-visual">${formatarParaDisplay(`Δ = ${bStr}^2 − 4×${aStr}×${cStr}`)}</div>` });
     passos.push({ type: 'html', content: `<div class="conta-visual">${formatarParaDisplay(`Δ = ${delta}`)}</div>` });
 
     if (delta < 0) {
