@@ -1858,6 +1858,7 @@ function mostrarDetalhes() {
                 if(passo.type === 'final-html') html += `<div class="info resultado-final" style="padding:15px; font-family:'Inter', sans-serif;">${passo.content}</div>`;
                 if(passo.type === 'error') html += `<pre class="info erro-didatico">⚠️ ${passo.content}</pre>`;
             });
+            html += `<button onclick="copiarExplicacao(this)" class="btn-topo" style="width: 100%; margin-top: 15px; padding: 12px; font-size: 1rem; border: 1px solid rgba(255,255,255,0.1);">📋 Copiar Explicação</button>`;
         } else { 
             html = "<pre class='info'>Faça um cálculo para ver os detalhes.</pre>"; 
         }
@@ -1865,6 +1866,25 @@ function mostrarDetalhes() {
     } else { 
         detalhesDiv.style.display = "none"; 
     }
+}
+
+function copiarExplicacao(btnElement) {
+    let texto = detalhesDiv.innerText.replace('📋 Copiar Explicação', '').trim();
+    navigator.clipboard.writeText(texto).then(() => {
+        let originalHtml = btnElement.innerHTML;
+        btnElement.innerHTML = "✅ Copiado!";
+        btnElement.style.background = "var(--success-color)";
+        btnElement.style.color = "#fff";
+        btnElement.style.borderColor = "var(--success-color)";
+        setTimeout(() => {
+            btnElement.innerHTML = originalHtml;
+            btnElement.style.background = "";
+            btnElement.style.color = "";
+            btnElement.style.borderColor = "rgba(255,255,255,0.1)";
+        }, 2000);
+    }).catch(err => {
+        console.error("Erro ao copiar", err);
+    });
 }
 
 atualizarDisplay();
@@ -1910,6 +1930,3 @@ displayEl.addEventListener('touchend', e => {
 }, {passive: true});
 </script>
 </body>
-</html>t>
-</body>
-</html>
