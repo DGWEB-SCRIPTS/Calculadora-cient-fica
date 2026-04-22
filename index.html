@@ -998,11 +998,12 @@ function formatarParaDisplay(expr) {
 
     let htmlPlaceholders = [];
     const letras = 'a-zA-ZΔθλμΩπe';
-    const tokenPattern = `(?:[${letras}]*\\x01\\d+\\x02|[${letras}]+|[\\d.,]+|\\x03\\d+\\x04)`;
+    const powTokenPattern = `(?:[${letras}]*\\x01\\d+\\x02|[${letras}]+|[\\d.,]+|\\x03\\d+\\x04)`;
+    const fracTokenPattern = `(?:√?[${letras}]*\\x01\\d+\\x02|√?[${letras}]+|√?[\\d.,]+|√?\\x03\\d+\\x04)`;
 
     function processMath(s) {
         let prevSafe;
-        const powerRegex = new RegExp(`(${tokenPattern})\\^(${tokenPattern})`, 'g');
+        const powerRegex = new RegExp(`(${powTokenPattern})\\^(${powTokenPattern})`, 'g');
         do {
             prevSafe = s;
             s = s.replace(powerRegex, (match, p1, p2) => {
@@ -1011,7 +1012,7 @@ function formatarParaDisplay(expr) {
             });
         } while (s !== prevSafe);
 
-        const fracRegex = new RegExp(`(${tokenPattern})\\/(${tokenPattern})`, 'g');
+        const fracRegex = new RegExp(`(${fracTokenPattern})\\/(${fracTokenPattern})`, 'g');
         do {
             prevSafe = s;
             s = s.replace(fracRegex, (match, p1, p2) => {
@@ -1020,7 +1021,7 @@ function formatarParaDisplay(expr) {
             });
         } while (s !== prevSafe);
         
-        const fracIncRegex = new RegExp(`(${tokenPattern})\\/(?!\\d|\\x01|\\x03|[a-zA-Z])`, 'g');
+        const fracIncRegex = new RegExp(`(${fracTokenPattern})\\/(?!\\d|\\x01|\\x03|[a-zA-Z])`, 'g');
         s = s.replace(fracIncRegex, (match, p1) => {
             htmlPlaceholders.push(`<span class="fracao"><span class="fracao-num">${p1}</span><span class="fracao-den">&nbsp;</span></span>`);
             return `\x03${htmlPlaceholders.length - 1}\x04`;
@@ -1474,23 +1475,32 @@ function extrairCoeficientes(expr) {
     let vMatch = expr.match(/[a-zA-ZΔθλμΩ]/);
     let varNome = vMatch ? vMatch[0] : 'x';
 
+    function parseCoef(coef) {
+        coef = coef.replace(/\*/g, '');
+        if (coef === '' || coef === '+') return 1;
+        if (coef === '-') return -1;
+        if (coef.startsWith('/')) coef = '1' + coef;
+        if (coef.startsWith('-/')) coef = '-1' + coef.substring(1);
+        if (coef.includes('/')) {
+            let p = coef.split('/');
+            return parseFloat(p[0]) / parseFloat(p[1]);
+        }
+        return parseFloat(coef);
+    }
+
     termos.forEach(t => {
         if (!t) return;
 
         if (t.includes(varNome + '²') || t.includes(varNome + '^2')) {
-            let coef = t.replace(varNome + '²', '').replace(varNome + '^2', '');
-            if (coef === '' || coef === '+') coef = 1;
-            if (coef === '-') coef = -1;
-            a += parseFloat(coef);
+            let coefStr = t.replace(varNome + '²', '').replace(varNome + '^2', '');
+            a += parseCoef(coefStr);
         }
         else if (t.includes(varNome)) {
-            let coef = t.replace(varNome, '');
-            if (coef === '' || coef === '+') coef = 1;
-            if (coef === '-') coef = -1;
-            b += parseFloat(coef);
+            let coefStr = t.replace(varNome, '');
+            b += parseCoef(coefStr);
         }
         else {
-            c += parseFloat(t);
+            c += parseCoef(t);
         }
     });
 
@@ -1674,9 +1684,114 @@ function resolverExpressaoAlgebrica(expr, exprOriginal = null) {
     mostrarPassosAlgebricos(passos, resultado.replace(/\^2/g, '²'));
 }
 
-function resolverModoAlgebrico(expr) {
-    let exprOriginal = expr;
+function resolverEquacaoIrracional(exprAgrupada, exprOriginal) {
+    let passos = [];
+    passos.push({ type: 'header', content: 'Resolução de Equação Irracional' });
+    passos.push({ type: 'html', content: `<div class="conta-visual">${formatarParaDisplay(exprOriginal)}</div>` });
+
+    if (exprAgrupada !== exprOriginal) {
+        passos.push({ type: 'intro', content: 'Passo Inicial: Definir o escopo correto da raiz quadrada.' });
+        passos.push({ type: 'html', content: `<div class="conta-visual">${formatarParaDisplay(exprAgrupada)}</div>` });
+    }
+
+    let termoRaiz = null, expressaoInterna = null;
+    
+    let idx = exprAgrupada.indexOf('(√');
+    if (idx !== -1) {
+        let open = 1;
+        for (let i = idx + 1; i < exprAgrupada.length; i++) {
+            if (exprAgrupada[i] === '(') open++;
+            else if (exprAgrupada[i] === ')') {
+                open--;
+                if (open === 0) {
+                    termoRaiz = exprAgrupada.substring(idx, i + 1);
+                    expressaoInterna = exprAgrupada.substring(idx + 2, i);
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (!termoRaiz) {
+        idx = exprAgrupada.indexOf('√(');
+        if (idx !== -1) {
+            let open = 1;
+            for (let i = idx + 2; i < exprAgrupada.length; i++) {
+                if (exprAgrupada[i] === '(') open++;
+                else if (exprAgrupada[i] === ')') {
+                    open--;
+                    if (open === 0) {
+                        termoRaiz = exprAgrupada.substring(idx, i + 1);
+                        expressaoInterna = exprAgrupada.substring(idx + 2, i);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!termoRaiz) throw new Error("A raiz quadrada não pôde ser identificada corretamente.");
+
+    passos.push({ type: 'intro', content: `Passo 1: Isolar o termo com a raiz: ${formatarParaDisplay(termoRaiz)}` });
+
+    let eqSubstituida = exprAgrupada.split(termoRaiz).join('R').replace(/×/g, '*').replace(/−/g, '-').replace(/÷/g, '/').replace(/,/g, '.');
+    let partes = eqSubstituida.split('=');
+    let left = expandirExpressao(partes[0]);
+    let right = partes.length > 1 ? expandirExpressao(partes[1]) : "0";
+
+    let l = extrairCoeficientes(left);
+    let r = extrairCoeficientes(right);
+
+    let coefR = (l.v === 'R' ? l.b : 0) - (r.v === 'R' ? r.b : 0);
+    let cTerm = r.c - l.c;
+
+    if (isNaN(coefR) || isNaN(cTerm)) throw new Error("A equação contém múltiplos termos complexos e não pode ser resolvida por este método passo a passo.");
+    if (coefR === 0) throw new Error("A raiz foi anulada na equação.");
+
+    let valorRaiz = cTerm / coefR;
+    let eqIsolada = `${termoRaiz} = ${formatarNumero(valorRaiz)}`;
+    passos.push({ type: 'html', content: `<div class="conta-visual">${formatarParaDisplay(eqIsolada)}</div>` });
+
+    if (valorRaiz < 0) {
+        passos.push({ type: 'intro', content: 'Como o resultado da raiz quadrada principal não pode ser negativo no conjunto dos reais, a equação é impossível.' });
+        passos.push({ type: 'final-html', content: `Resultado Final: Sem solução real` });
+        mostrarPassosAlgebricos(passos, "Sem solução");
+        return;
+    }
+
+    passos.push({ type: 'intro', content: 'Passo 2: Elevar ambos os lados ao quadrado para eliminar a raiz.' });
+    let valorQuadrado = valorRaiz * valorRaiz;
+    let eqSemRaiz = `${expressaoInterna} = ${formatarNumero(valorQuadrado)}`;
+
+    passos.push({ type: 'html', content: `<div class="conta-visual">${formatarParaDisplay(`(${termoRaiz})^2 = (${formatarNumero(valorRaiz)})^2`)}</div>` });
+    passos.push({ type: 'html', content: `<div class="conta-visual">${formatarParaDisplay(eqSemRaiz)}</div>` });
+
+    passos.push({ type: 'intro', content: 'Passo 3: Resolver a equação resultante.' });
+    let eqFinalNorm = eqSemRaiz.replace(/×/g, '*').replace(/−/g, '-').replace(/÷/g, '/').replace(/,/g, '.');
+    let [fEsq, fDir] = eqFinalNorm.split('=');
+    let fEsqExp = expandirExpressao(fEsq);
+    let fDirExp = expandirExpressao(fDir);
+    let aF = extrairCoeficientes(fEsqExp).a - extrairCoeficientes(fDirExp).a;
+
+    let passosBackup = [...passos];
+    ultimosPassos = [];
+    if (aF !== 0) resolverEquacaoQuadratica(`${fEsqExp}=${fDirExp}`, eqSemRaiz);
+    else resolverEquacaoLinear(`${fEsqExp}=${fDirExp}`, eqSemRaiz);
+
+    let passosSub = ultimosPassos.length > 2 ? ultimosPassos.slice(2) : ultimosPassos;
+    passos = passosBackup.concat(passosSub);
+    ultimosPassos = passos;
+}
+
+function resolverModoAlgebrico(expr, exprOriginalUser) {
+    let exprOriginal = exprOriginalUser || expr;
     let exprNorm = expr.replace(/×/g, '*').replace(/−/g, '-').replace(/÷/g, '/').replace(/,/g, '.');
+    
+    if (exprNorm.includes('√') && exprNorm.includes('=')) {
+        resolverEquacaoIrracional(exprNorm, exprOriginal);
+        return;
+    }
+
     let partes = exprNorm.split('=');
     let esq = expandirExpressao(partes[0]);
     let dir = partes.length > 1 ? expandirExpressao(partes[1]) : "";
